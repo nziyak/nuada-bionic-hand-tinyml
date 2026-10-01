@@ -142,6 +142,8 @@ nuada-bionic-hand-tinyml/
 ---
 
 ## 📚 Technical Documentation Links
+* [Final Hardware Specification, BOM & Wiring Architecture](docs/hardware_specification_and_bom.md)
 * [Biomechanics, Anatomy & Signal Acquisition Manual](docs/anatomy_and_signal_acquisition.md)
 * [Datasheets, Electrical Specifications & Bus Timing Report](docs/datasheets/datasheets_summary.md)
 * [Embedded MCU Comparative Study](docs/hardware_comparison.md)
+
