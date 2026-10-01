@@ -197,14 +197,19 @@ All 6 scenarios will be benchmarked on physical ESP32-S3 hardware using:
 
 ---
 
-## 8. Research Division & Team Allocation
+## 8. Symmetrical Embedded, Real-Time OS & Machine Learning Research Division
 
-| Task Scope | Student 1 (Raw Data & Deep Learning Line) | Student 2 (Feature Engineering & Embedded System Line) |
+To ensure that **both researchers master advanced embedded systems engineering (C/C++ firmware, peripheral drivers, symmetric multiprocessing FreeRTOS, IPC synchronization) and edge TinyML deployment**, the responsibilities are organized across two complementary hardware and OS pipelines:
+
+| Research Dimension | Nuri Ziya Kırtepe (High-Speed Sampling, Hard Real-Time OS & Deep TinyML) | Evrim Doğa Solmaz (Real-Time DSP, Soft Real-Time OS & Kinematic Fusion) |
 |---|---|---|
-| **Data Ingestion** | High-speed ADC sampling (**1000–2000 Hz Raw sEMG**) and sliding window segmentation. | Real-time digital filtering (Bandpass 20–450 Hz + 50 Hz Notch) and Hudgins feature extraction (MAV, RMS, WL, ZC) in C++. |
-| **Model Training** | Train and optimize **SVM, MLP, and 1D-CNN (Cases 1, 2, 3)** on raw tensors in Python/PyTorch/Keras. | Train and optimize **SVM, MLP, and 1D-CNN (Cases 4, 5, 6)** on 16-D feature vectors in scikit-learn/Keras. |
-| **ESP32-S3 Deployment** | Deploy raw models via TFLite Micro / emlearn and record execution latency and memory. | Deploy feature models to MCU and benchmark combined feature extraction + inference latency. |
-| **System Integration** | Dry electrode dataset acquisition software and data labeling protocol. | MPU-6050 complementary filtering (arm elevation) and low-latency Wi-Fi/BLE communication to 3D hand simulation. |
+| **FreeRTOS & Embedded OS Architecture** | • **Hard Real-Time Task Design (Core 1):** Architects the high-priority `vTaskEMGSampling` and `vTaskTinyMLInference` tasks.<br>• **ISR & OS Synchronization:** Implements direct-to-task notifications (`xTaskNotifyFromISR`) and binary semaphores triggered by DMA buffer-ready hardware interrupts.<br>• **Cross-Core IPC & Queues:** Co-engineers the FreeRTOS Queue and Mutex architecture that transfers raw multi-channel windows between Core 1 and Core 0 with zero priority inversion. | • **Soft Real-Time Task Design (Core 0):** Architects `vTaskIMUSampling` (deterministic 100 Hz timer task via `vTaskDelayUntil`) and `vTaskTelemetry`.<br>• **Network RTOS Stack (LwIP):** Configures FreeRTOS socket tasks for non-blocking Wi-Fi UDP / BLE data transmission.<br>• **Cross-Core Consumer Tasks:** Implements consumer tasks reading from the inter-core queue to feed the real-time DSP filter pipeline. |
+| **Core Embedded Driver Architecture (C/C++)** | • **Continuous DMA ADC Driver:** Develops low-level ESP32-S3 ADC1 driver streaming 2000 Hz 4-channel data into circular ping-pong memory buffers.<br>• **Hardware Fallback Driver:** Implements high-speed SPI2 master driver for MCP3008 ADC. | • **Embedded DSP Filtering:** Writes real-time fixed/floating-point IIR bandpass (20–450 Hz) and 50 Hz notch filter cascades in C++.<br>• **IMU I2C Driver & Kinematics:** Implements MPU-6050 driver and real-time Complementary / Madgwick orientation filter for arm elevation. |
+| **Edge AI & On-Device Deployment** | • Deploys quantized 1D-CNN and MLP architectures to ESP32-S3 Core 1 using **TensorFlow Lite for Microcontrollers (TFLM)**.<br>• Optimizes matrix multiplications with Espressif **ESP-NN vector acceleration instructions**.<br>• Benchmarks hardware inference latency, Tensor Arena dynamic heap usage, and Flash footprint. | • Deploys real-time Hudgins feature extractor (MAV, RMS, WL, ZC) and Support Vector Machine (SVM) inference engine via lightweight C (`emlearn`).<br>• Implements embedded state machine combining gesture classification with spatial arm orientation. |
+| **Offline Modeling & Signal Analysis (Python)** | • Raw time-series waveform preprocessing, temporal spectrogram analysis, 1D-CNN architecture design.<br>• INT8 post-training quantization, hyperparameter search, and loss curve optimization. | • Time-domain feature space formulation, dimensionality reduction, feature importance analysis.<br>• Classical ML (SVM, Random Forest) and shallow MLP model training, cross-validation, and F1-score evaluation. |
+| **Hardware Routing & Telemetry** | • Multi-channel dry electrode hardware routing, analog ground plane shielding.<br>• Automated data collection GUI and real-time labeling script. | • Real-time wireless telemetry packet formatting (JSON/Protobuf over UDP) to 3D hand digital-twin simulation.<br>• Hybrid kinematic gesture state machine integration. |
+
+
 
 ---
 

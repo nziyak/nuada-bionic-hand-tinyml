@@ -18,14 +18,15 @@
 
 ---
 
-## 👥 Engineering Team & Task Breakdown
+## 👥 Engineering Team & Balanced Embedded / RTOS Task Allocation
 
-The research methodology is partitioned into two distinct, complementary signal processing and machine learning pipelines:
+The project firmware is built on an **SMP FreeRTOS (Real-Time Operating System)** architecture across the dual-core ESP32-S3. **Both researchers actively co-develop the embedded OS infrastructure, C/C++ firmware, peripheral drivers, and on-device machine learning engines**, divided logically across functional cores:
 
-| Contributor | Focus Area | Signal Pipeline | Model Architectures | Hardware & Embedded Scope |
+| Contributor | Focus Area | Embedded Firmware & FreeRTOS Architecture (ESP32-S3 C/C++) | Signal & Machine Learning Scope | Hardware Interfacing & System Tasks |
 |---|---|---|---|---|
-| **Nuri Ziya Kırtepe** | **Raw Signal & Deep Learning (TinyML Pipeline)** | 1000 – 2000 Hz Raw sEMG (Unfiltered Time-Series Waveforms) | 1D-CNN (Temporal Convolutional Neural Networks) & Spectrograms | High-speed ADC architecture (DMA ADC / SPI MCP3008), Dataset recording & labeling protocols |
-| **Evrim Doğa Solmaz** | **DSP Filtering, Feature Engineering & Embedded Systems** | Rectified & Low-pass Filtered Muscle Envelope (RMS / Envelope, 50-100 Hz) | Hudgins Feature Set (MAV, RMS, WL, ZC) + SVM & Multi-Layer Perceptron (MLP) | MPU-6050 complementary filtering (arm elevation), ESP32-S3 Wi-Fi/BLE communication to 3D simulation |
+| **Nuri Ziya Kırtepe** | **High-Speed DMA Drivers, Hard Real-Time OS Tasks & Deep TinyML** | • **Hard Real-Time RTOS Tasks (Core 1):** Architects `vTaskEMGSampling` (highest priority) and `vTaskTinyMLInference` pinned to Core 1.<br>• **ISR & RTOS Synchronization:** Implements zero-latency task wakeups via `xTaskNotifyFromISR` triggered by DMA buffer-ready interrupts.<br>• **Inter-Core IPC Queues:** Co-develops cross-core FreeRTOS Queues and Mutexes to stream processed windows from Core 1 to Core 0.<br>• **DMA ADC Driver:** Writes low-level continuous DMA ADC (and SPI fallback) drivers for 2000 Hz 4-channel deterministic sampling.<br>• **Edge AI Engine:** Deploys quantized 1D-CNN via TensorFlow Lite for Microcontrollers (TFLM) with **ESP-NN vector acceleration**. | • **Raw Time-Series Analysis:** Frequency response and time-domain waveform preprocessing in Python.<br>• **Deep Learning:** 1D-CNN and MLP model training, post-training INT8 quantization, and hardware inference latency profiling. | • Multi-channel dry electrode analog signal routing.<br>• Dataset collection and automated temporal labeling protocol.<br>• Dynamic Tensor Arena & heap memory optimization. |
+| **Evrim Doğa Solmaz** | **DSP Filters, Sensor Fusion, Soft Real-Time OS Tasks & Telemetry** | • **Soft Real-Time RTOS Tasks (Core 0):** Architects `vTaskIMUSampling` (100 Hz deterministic periodic task via `vTaskDelayUntil`) and `vTaskTelemetry` pinned to Core 0.<br>• **Embedded DSP Engine:** Codes real-time IIR bandpass (20–450 Hz) and 50 Hz notch filter cascades in C++.<br>• **IMU Driver & Sensor Fusion:** Writes I2C MPU-6050 driver and implements real-time Complementary / Madgwick filter for arm elevation (Pitch/Roll).<br>• **Feature ML Engine:** Deploys real-time Hudgins feature extraction and SVM inference via lightweight C (`emlearn`).<br>• **Wireless Networking Stack:** Manages FreeRTOS LwIP network tasks for low-latency Wi-Fi UDP / BLE transmission. | • **Feature Engineering:** Hudgins time-domain feature space design (MAV, RMS, WL, ZC, SSC) and dimensionality reduction.<br>• **Classical ML & State Machine:** SVM and shallow MLP classifier training and hyperparameter optimization. | • Core 0 FreeRTOS multi-threading and task stack sizing.<br>• Low-latency wireless telemetry to 3D hand digital-twin.<br>• Real-time hybrid decision state machine. |
+
 
 ---
 
