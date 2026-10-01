@@ -1,59 +1,59 @@
-# Nuada: Bionic Hand movement estimation via TinyML
+# Nuada: Bionic Hand Movement Estimation via TinyML
 
 [![Project Status: Active Development](https://img.shields.io/badge/Project%20Status-Active%20Development-blue.svg)](#)
 [![Hardware: ESP32-S3](https://img.shields.io/badge/Hardware-ESP32--S3%20Xtensa%20LX7-red.svg)](docs/datasheets/esp32-s3_datasheet_en.pdf)
 [![ML: TinyML / TFLite Micro](https://img.shields.io/badge/ML-TinyML%20%7C%20Edge%20Impulse-green.svg)](#)
 [![Sensors: sEMG + IMU](https://img.shields.io/badge/Sensors-sEMG%20(4--Ch)%20%2B%20MPU--6050-orange.svg)](#)
 
-**Nuada**, önkol yüzeyel elektromiyografi (sEMG) sinyallerini ve kol eylemsizlik verilerini (IMU) işleyerek, mikrodenetleyici üzerinde (uçta yapay zeka - TinyML) 3 parmaklı biyonik el hareketlerini ve kol yönelimini gerçek zamanlı kestiren giyilebilir bir protez kontrol sistemidir.
+**Nuada** is an edge-computing wearable prosthesis control framework that processes forearm surface electromyography (sEMG) signals and arm inertial data (IMU). Running directly on a low-power microcontroller (**ESP32-S3**) using **TinyML**, it performs real-time classification of 3-finger bionic hand movements and estimates spatial arm elevation/orientation with minimal latency.
 
 ---
 
-## 📌 Proje Özeti ve Temel Özellikler
+## 📌 Executive Summary & Key Highlights
 
-* **3 Parmaklı Biyonik Kontrol (3-DOF):** İnsan elinin günlük işlevlerinin %85'ini oluşturan Başparmak, İşaret ve Orta parmak hareketlerini sınıflandırır (Dinlenme, Güçlü Kavrama/Yumruk, El Açık, Çimdik/Pinch, İşaret Etme).
-* **Kuru Elektrot Odaklı Tasarım:** Islak jel elektrotlar yerine, nihai giyilebilir kol bandında kuru elektrotlar (metal snap / iletken kumaş) kullanılır. Alan kayması (domain shift) riskini önlemek için veri toplama da doğrudan kuru elektrotlarla gerçekleştirilir.
-* **Hibrit Kinematik & Biyomekanik:** Parmak hareketleri 4 kanallı önkol sEMG sinyalleriyle; kol kaldırma ve indirme hareketleri ise 6 eksenli MPU-6050 IMU sensörüyle takip edilir.
-* **Yüksek Performanslı Uçta Çıkarım (TinyML):** ESP32-S3 mikrokontrolcüsünün vektör/AI komut seti (ESP-NN) kullanılarak düşük gecikmeli (< 50 ms) çıkarım yapılır ve sonuçlar kablosuz (Wi-Fi/BLE) olarak 3D simülasyona aktarılır.
+* **3-Finger Bionic Actuation (3-DOF):** Controls the Thumb, Index, and Middle fingers—encompassing over 85% of functional daily human grasp activities (Rest, Power Grasp / Fist, Open Hand, Pinch Grasp, and Pointing).
+* **Dry-Electrode Centric Methodology:** Designed exclusively for dry electrodes (conductive fabric / stainless-steel snaps) integrated into a comfortable wearable forearm armband. Dataset acquisition is conducted natively with dry electrodes to eliminate **domain shift / covariate mismatch** during deployment.
+* **Hybrid Biomechanical & Kinematic Fusion:** Multi-channel sEMG isolates fine motor intent of digits on the forearm, while an onboard 6-axis **MPU-6050** IMU estimates arm elevation (raising/lowering via pitch angle) and forearm pronation/supination (roll angle) without clumsy shoulder cabling.
+* **High-Throughput On-Device TinyML:** Exploits the ESP32-S3 dual-core Xtensa LX7 processor and its proprietary vector/AI instructions (**ESP-NN**) to deliver sub-50 ms inference times and low-latency wireless telemetry (Wi-Fi/BLE) to a 3D digital-twin simulation.
 
 ---
 
-## 👥 Takım ve Görev Dağılımı
+## 👥 Engineering Team & Task Breakdown
 
-Proje, iki paralel araştırma hattı üzerinden yürütülmektedir:
+The research methodology is partitioned into two distinct, complementary signal processing and machine learning pipelines:
 
-| Öğrenci | Odak Alanı | Sinyal Hattı | Model / Algoritma | Donanım & Entegrasyon |
+| Contributor | Focus Area | Signal Pipeline | Model Architectures | Hardware & Embedded Scope |
 |---|---|---|---|---|
-| **Nuri Ziya Kırtepe** | **Ham Veri & Derin Öğrenme (TinyML)** | 1000 – 2000 Hz Ham sEMG (Raw Waveform) | 1D-CNN (Convolutional Neural Network) & Spektrogram | Hızlı ADC hattı (DMA / SPI MCP3008), Veri seti toplama & etiketleme |
-| **Evrim Doğa Solmaz** | **DSP Filtreleme, Öznitelik Çıkarımı & Gömülü Yazılım** | Doğrultulmuş & Filtrelenmiş Zarf Sinyali (Envelope / RMS, 50-100 Hz) | Hudgins Öznitelik Vektörü (MAV, WL, ZC, SSC) + SVM / Random Forest | MPU-6050 açı hesabı (kol kaldırma), ESP32-S3 Wi-Fi/BLE simülasyon haberleşmesi |
+| **Nuri Ziya Kırtepe** | **Raw Signal & Deep Learning (TinyML Pipeline)** | 1000 – 2000 Hz Raw sEMG (Unfiltered Time-Series Waveforms) | 1D-CNN (Temporal Convolutional Neural Networks) & Spectrograms | High-speed ADC architecture (DMA ADC / SPI MCP3008), Dataset recording & labeling protocols |
+| **Evrim Doğa Solmaz** | **DSP Filtering, Feature Engineering & Embedded Systems** | Rectified & Low-pass Filtered Muscle Envelope (RMS / Envelope, 50-100 Hz) | Hudgins Feature Set (MAV, RMS, WL, ZC) + SVM & Multi-Layer Perceptron (MLP) | MPU-6050 complementary filtering (arm elevation), ESP32-S3 Wi-Fi/BLE communication to 3D simulation |
 
 ---
 
-## 🏛️ Sistem Mimarisi
+## 🏛️ System Architecture
 
 ```mermaid
 graph TD
-    subgraph KULLANICI ["1. Biyomekanik Giriş"]
-        MUSCLE["Önkol Kasları (FDS, FPL, ED, EPL)"]
-        DRY["4x Çift Kuru Elektrot (SENIAM: 20 mm IED)"]
-        REF["Ortak Referans Elektrotu (Dirsek - Olecranon)"]
-        IMU_CHIP["MPU-6050 (Kol Bandı Üzeri IMU)"]
+    subgraph INPUT_STAGE ["1. Biomechanical Input"]
+        MUSCLE["Forearm Muscles (FDS, FPL, ED, EPL)"]
+        DRY["4x Differential Dry Electrode Pairs (SENIAM: 20 mm IED)"]
+        REF["Single Common Ground / Reference (Elbow - Olecranon)"]
+        IMU_CHIP["MPU-6050 (Armband 6-Axis IMU)"]
     end
 
-    subgraph AFE_STAGE ["2. Analog Ön Uç (AFE)"]
-        AMP["4x Analog Biyopotansiyel Amplifikatör (AD8232 Modifiye)"]
-        FILTER["Bant Geçiren Filtre (20 Hz - 450 Hz) + Notch (50 Hz)"]
+    subgraph AFE_STAGE ["2. Analog Front-End (AFE)"]
+        AMP["4x Biopotential Amplifiers (Modified AD8232 / INA)"]
+        FILTER["Bandpass Filter (20 Hz - 450 Hz) + Notch Filter (50 Hz)"]
     end
 
-    subgraph MCU_STAGE ["3. Gömülü Sistem (ESP32-S3)"]
-        ADC_ENGINE["ADC Ünitesi (Plan A: Dahili DMA ADC / Plan B: MCP3008 SPI)"]
-        RAW_PIPE["Öğrenci 1 Hattı: Ham Zaman Serisi (2000 Hz) -> 1D-CNN"]
-        DSP_PIPE["Öğrenci 2 Hattı: Zarf / RMS (100 Hz) -> Hudgins Feature + ML"]
-        IMU_FUSION["IMU Füzyon Algoritması (Kol Kaldırma / Pitch-Roll)"]
+    subgraph MCU_STAGE ["3. Embedded System (ESP32-S3)"]
+        ADC_ENGINE["ADC Engine (Plan A: Internal DMA ADC / Plan B: External MCP3008 SPI)"]
+        RAW_PIPE["Student 1 Pipeline: Raw Waveform (2000 Hz) -> 1D-CNN"]
+        DSP_PIPE["Student 2 Pipeline: Envelope / RMS (100 Hz) -> Hudgins Features + ML"]
+        IMU_FUSION["Kinematic Fusion Algorithm (Arm Elevation / Pitch & Roll)"]
     end
 
-    subgraph OUTPUT_STAGE ["4. Çıktı & Simülasyon"]
-        SIM["3D Biyonik El Simülasyonu (Unity / WebGL)"]
+    subgraph OUTPUT_STAGE ["4. Digital Twin Simulation"]
+        SIM["3D Bionic Hand & Arm Simulation (Unity / WebGL / Blender)"]
     end
 
     MUSCLE --> DRY
@@ -71,53 +71,76 @@ graph TD
 
 ---
 
-## 🔌 Donanım Seçimleri ve Veri Yolu (Bus) Özellikleri
+## 🔬 6-Scenario Experimental Benchmark Matrix (2 Data Pipelines × 3 Models)
 
-### 1. Ana İşlemci: ESP32-S3
-* **Çekirdek:** Çift Çekirdekli Xtensa LX7 @ 240 MHz (AI Vektör hızlandırıcılı).
-* **Hafıza:** 512 KB dahili SRAM + harici Flash.
-* **SPI Sayısı:** Toplam 4 SPI denetleyicisi (Kullanıcıya açık: **SPI2/FSPI** ve **SPI3/HSPI**).
-* **ADC Mimarisi:** İki adet 12-bit SAR ADC (ADC1 ve ADC2). Continuous DMA modu ile işlemci yükü olmadan saniyede 100 kHz+ örnekleme yeteneği.
+To rigorously evaluate embedded efficiency and classification accuracy, both researchers benchmark the exact same **3 model families** across their respective pipelines on the ESP32-S3:
 
-### 2. ADC Stratejisi: Plan A vs. Plan B
-* **PLAN A (Öncelikli & Minimalist): ESP32-S3 Dahili ADC1 (DMA Modu)**
-  * Wi-Fi ile çakışmayan ADC1 pinleri (GPIO 1-4) kullanılır.
-  * Kanal başı 2000 Hz örnekleme CPU yükü olmadan doğrudan DMA arabelleğine akar.
-  * Harici çip gerektirmez, sıfır ek maliyet.
-* **PLAN B (Yedek / Sigorta): SPI Tabanlı MCP3008**
-  * 8 Kanal, 10-bit, 200 kSPS dönüşüm hızı.
-  * ESP32-S3 SPI2 (FSPI) hattı üzerinden 1.5 MHz saat hızıyla bağlanır.
-  * 4 kanalın okunması sadece 64 µs sürer (2000 Hz periyodunun sadece %12.8 bus kullanım oranı).
+1. **Model A: Support Vector Machine (SVM - Classical ML)** — Ultra-low latency benchmark deployed via C array export (`emlearn` / `micromlgen`).
+2. **Model B: Multi-Layer Perceptron (MLP / ANN - Shallow Neural Network)** — Fully-connected architecture executed via TensorFlow Lite for Microcontrollers (TFLM) with INT8 quantization.
+3. **Model C: 1D Convolutional Neural Network (1D-CNN - Deep Learning)** — Learns temporal filter representations directly from sEMG waveforms, deployed via TFLM INT8.
 
-### 3. Eylemsizlik Sensörü: MPU-6050
-* **Arayüz:** I2C Fast-Mode (400 kHz saat frekansı).
-* **İşlev:** Kolun yukarı/aşağı kaldırılması (Pitch açısı) ve bilek dönüşünün (Roll açısı) sıfır gecikmeyle kestirimi.
+| Scenario | Input Representation | Model Architecture | Expected Behavior & Research Hypothesis |
+|---|---|---|---|
+| **Case 1** | **Raw Time-Series** (4 ch × 200 ms = 800 floats) | **SVM** | Prone to curse of dimensionality and overfitting; high inference latency on microcontrollers. |
+| **Case 2** | **Raw Time-Series** (4 ch × 200 ms = 800 floats) | **MLP (ANN)** | Captures basic non-linearities but misses inter-sample temporal correlation. |
+| **Case 3** | **Raw Time-Series** (4 ch × 200 ms tensor) | **1D-CNN** | **Optimal Raw Model.** Convolutional kernels intrinsically filter raw noise and isolate Motor Unit Action Potentials (MUAP). |
+| **Case 4** | **Engineered Features** (4 ch × 4 features = 16 floats) | **SVM** | **Ultra-Fast Baseline.** High classification boundary margin with sub-millisecond execution. |
+| **Case 5** | **Engineered Features** (4 ch × 4 features = 16 floats) | **MLP (ANN)** | **Balanced Champion Candidate.** Excellent accuracy with exceptionally low RAM/Flash footprint. |
+| **Case 6** | **Engineered Features** (4 ch × 4 features = 16 floats) | **1D-CNN** | Redundant spatial convolutions on static time-invariant feature vectors; analyzed as architectural inefficiency. |
+
+### Evaluation Metrics on Hardware:
+* **Classification Performance:** Test Accuracy (%), F1-Score, and Confusion Matrix.
+* **Inference Latency:** Execution time per prediction window on ESP32-S3 (ms).
+* **Dynamic RAM Overhead:** Peak tensor arena / heap allocation (KB).
+* **Non-Volatile Storage (Flash):** Compiled model binary footprint (KB).
 
 ---
 
-## 📂 Proje Dizin Yapısı
+## 🔌 Hardware Specifications & Bus Timing Analysis
+
+### 1. Main Processor: ESP32-S3
+* **Core:** Dual-Core Xtensa LX7 @ 240 MHz with Vector/AI Extension (ESP-NN).
+* **SRAM:** 512 KB internal SRAM + optional external octal PSRAM.
+* **SPI Controllers:** Total of 4 SPI peripherals. User-accessible: **SPI2 (FSPI)** and **SPI3 (HSPI)** with dedicated DMA channels.
+* **Internal ADC:** Two 12-bit SAR ADCs. Supports Continuous DMA mode for up to 100 kHz+ uninterrupted multi-channel sampling.
+
+### 2. ADC Strategy: Primary vs. Fallback
+* **PLAN A (Primary & Recommended): ESP32-S3 Internal ADC1 (Continuous DMA Mode)**
+  * Uses dedicated ADC1 pins (GPIO 1 to GPIO 4) to eliminate Wi-Fi RF conflict.
+  * Captures 2000 Hz per channel without CPU intervention.
+  * Eliminates external converter ICs, reducing PCB size and Bill of Materials (BOM) cost.
+* **PLAN B (Fallback / Redundancy): External MCP3008 (SPI 10-Bit ADC)**
+  * 8-channel, 10-bit successive approximation register ADC running at 200 kSPS.
+  * Interfaced via SPI2 at 1.5 MHz bus clock. Reading 4 channels takes 64 µs (only **12.8%** of the 500 µs sampling interval).
+
+### 3. Inertial Measurement Unit: MPU-6050
+* **Interface:** I2C Fast-Mode (400 kHz bus clock).
+* **Bandwidth Usage:** Reading 14 bytes (3-axis Accel + Temp + 3-axis Gyro) takes ~0.315 ms. At a 100 Hz sampling rate, bus utilization is merely **3.15%**.
+
+---
+
+## 📂 Repository Directory Layout
 
 ```
-nuada/
+nuada-bionic-hand-tinyml/
 ├── docs/
-│   ├── anatomy_and_signal_acquisition.md   # Biyomekanik anatomi, SENIAM ve elektrot yerleşimi
-│   ├── hardware_comparison.md              # MCU ve donanım karşılaştırma analizi
-│   └── datasheets/                         # İndirilen teknik PDF'ler ve bus analizleri
-│       ├── datasheets_summary.md           # Datasheet özetleri ve bus zamanlama hesapları
-│       ├── esp32-s3_datasheet_en.pdf       # Espressif ESP32-S3 Datasheet
-│       ├── ad8232_datasheet.pdf            # Analog Devices AD8232 Datasheet
-│       ├── mcp3008_datasheet.pdf           # Microchip MCP3008 ADC Datasheet
-│       ├── mpu6050_datasheet.pdf           # InvenSense MPU-6050 IMU Datasheet
-│       └── ads1115_datasheet.pdf           # Texas Instruments ADS1115 Datasheet
-├── images/                                 # Biyomekanik illüstrasyonlar ve yerleşim şemaları
-├── .gitignore                              # Git hariç tutma kuralları
-├── GEMINI.md                               # Proje kuralları ve stil kılavuzu
-└── README.md                               # Ana proje dokümanı
+│   ├── anatomy_and_signal_acquisition.md   # Comprehensive biomechanics, SENIAM protocols & hardware guide
+│   ├── hardware_comparison.md              # Microcontroller and platform trade-off evaluation
+│   └── datasheets/                         # Archived manufacturer datasheets & technical summaries
+│       ├── datasheets_summary.md           # Bus timing calculations, electrical ranges, and pinouts
+│       ├── esp32-s3_datasheet_en.pdf       # Espressif ESP32-S3 Official Datasheet
+│       ├── ad8232_datasheet.pdf            # Analog Devices AD8232 Front-End Datasheet
+│       ├── mcp3008_datasheet.pdf           # Microchip MCP3008 10-Bit ADC Datasheet
+│       ├── mpu6050_datasheet.pdf           # InvenSense MPU-6050 6-Axis MotionTracking Datasheet
+│       └── ads1115_datasheet.pdf           # Texas Instruments ADS1115 16-Bit ADC Datasheet
+├── images/                                 # Scientific illustrations, anatomical diagrams & electrode maps
+├── .gitignore                              # Git exclusion rules for embedded and Python environments
+└── README.md                               # Primary project portal and documentation
 ```
 
 ---
 
-## 📖 Dokümantasyon Bağlantıları
-* [Biyomekanik Anatomi ve Sinyal Toplama Rehberi](docs/anatomy_and_signal_acquisition.md)
-* [Datasheet ve Veri Yolu Analiz Raporu](docs/datasheets/datasheets_summary.md)
-* [Donanım Karşılaştırma Dokümanı](docs/hardware_comparison.md)
+## 📚 Technical Documentation Links
+* [Biomechanics, Anatomy & Signal Acquisition Manual](docs/anatomy_and_signal_acquisition.md)
+* [Datasheets, Electrical Specifications & Bus Timing Report](docs/datasheets/datasheets_summary.md)
+* [Embedded MCU Comparative Study](docs/hardware_comparison.md)

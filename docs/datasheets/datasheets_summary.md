@@ -1,96 +1,90 @@
 # Nuada: Bionic Hand Movement Estimation via TinyML
-## Donanım Bileşenleri Datasheet ve Veri Yolu Analiz Raporu
+## Hardware Component Datasheets, Interface Buses & Timing Report
 
-Bu doküman, projede kullanılan/değerlendirilen mikrodenetleyici, analog ön uç (AFE), ADC, sensör ve veri yollarına ait teknik parametreleri, bus aralıklarını, SPI/I2C zamanlamalarını ve resmi datasheet referanslarını içerir.
+This technical report compiles the architectural specifications, electrical ratings, dynamic ranges, and communication bus timing calculations for all key hardware components evaluated in the **Nuada** bionic prosthesis system.
 
 ---
 
-## 1. Hızlı Referans ve Datasheet Arşivi
+## 1. Quick Reference & Datasheet Archive
 
-İndirilen resmi datasheet PDF'leri `docs/datasheets/` dizininde yer almaktadır:
+All official manufacturer PDF documents are archived in the `docs/datasheets/` directory:
 
-| Bileşen | Görevi / Rolü | Protokol / Giriş | Önemli Parametreler | Yerel PDF Dosyası |
+| Component | Function / Role | Interface / Signal | Core Technical Specifications | Local PDF Link |
 |---|---|---|---|---|
-| **ESP32-S3** | Ana İşlemci & TinyML Çıkarım Ünitesi | Wi-Fi 4, BLE 5.0, 2x SPI, I2C, DMA ADC | 240 MHz Çift Çekirdek Xtensa LX7, Vektör/AI Komutları, 512 KB SRAM | [esp32-s3_datasheet_en.pdf](esp32-s3_datasheet_en.pdf) |
-| **AD8232** | Biyopotansiyel Analog Ön Uç (AFE) | Analog Giriş / Diferansiyel | CMRR > 80 dB, Enstrümantasyon Kazancı x100, 2 Kutuplu Filtre | [ad8232_datasheet.pdf](ad8232_datasheet.pdf) |
-| **MCP3008** | Harici 8-Kanal 10-Bit ADC (Yedek/Plan B) | SPI Arayüzü (10-bit) | 200 kSPS @ 5V, 75-100 kSPS @ 3.3V, Düşük Güç (5 µA standby) | [mcp3008_datasheet.pdf](mcp3008_datasheet.pdf) |
-| **MPU-6050** | 6 Eksen Eylemsizlik Sensörü (IMU) | I2C Arayüzü (100/400 kHz) | 3-Eksen İvmeölçer + 3-Eksen Jiroskop, Dahili DMP, 16-bit ADC | [mpu6050_datasheet.pdf](mpu6050_datasheet.pdf) |
-| **ADS1115** | 4-Kanal 16-Bit I2C ADC (Referans/İnceleme) | I2C Arayüzü | Maks. 860 SPS (Çok kanallı ham EMG için yetersiz, zarf için uygun) | [ads1115_datasheet.pdf](ads1115_datasheet.pdf) |
+| **ESP32-S3** | Primary Edge MCU & TinyML Inference Engine | Wi-Fi 4, BLE 5.0, 2x SPI, I2C, DMA ADC | 240 MHz Dual-Core Xtensa LX7, Hardware Vector/AI Acceleration (ESP-NN), 512 KB SRAM | [esp32-s3_datasheet_en.pdf](esp32-s3_datasheet_en.pdf) |
+| **AD8232** | Biopotential Analog Front-End (AFE) | Differential Analog Input | CMRR > 80 dB, Integrated Instrumentation Gain x100, 2-Pole Sallen-Key Filter Stage | [ad8232_datasheet.pdf](ad8232_datasheet.pdf) |
+| **MCP3008** | External 8-Channel 10-Bit ADC (Plan B / Redundancy) | SPI Bus (Up to 4-Wire) | 200 kSPS @ 5.0V, 75-100 kSPS @ 3.3V, Low Standby Current (5 µA) | [mcp3008_datasheet.pdf](mcp3008_datasheet.pdf) |
+| **MPU-6050** | 6-Axis Inertial Measurement Unit (IMU) | I2C Bus (Standard / Fast Mode) | 3-Axis Gyroscope + 3-Axis Accelerometer, Onboard Digital Motion Processor (DMP), 16-Bit ADCs | [mpu6050_datasheet.pdf](mpu6050_datasheet.pdf) |
+| **ADS1115** | 4-Channel 16-Bit ADC (Evaluated & Audited) | I2C Bus | Max 860 SPS (Insufficient for multi-channel raw sEMG, viable for envelope only) | [ads1115_datasheet.pdf](ads1115_datasheet.pdf) |
 
 ---
 
-## 2. Danışman Hocanın Sorularına Teknik Cevaplar
+## 2. Technical Inquiries & Engineering Analyses
 
-### Soru 1: Sensör Aralığı (Sensor Range) Nedir?
-Biyomedikal mühendisliği ve sinyal arayüzü açısından sensör aralığı 3 farklı boyutta tanımlanır:
+### 2.1 Sensor Range Definitions
+In biomedical engineering and sensor interfacing, "sensor range" encompasses three distinct technical parameters:
 
-1. **Giriş Dinamik Voltaj Aralığı (Input Dynamic Range):**
-   - İnsan önkol kaslarının ürettiği cilt yüzeyi biyopotansiyel sinyali: **10 µV – 5 mV (Peak-to-Peak)**.
-   - Elektrotlar bu mikrovolt seviyesindeki iyonik potansiyeli toplar.
-2. **Yükseltilmiş Çıkış Dinamik Aralığı (Output Dynamic Range):**
-   - Analog Ön Uç (AD8232 / Enstrümantasyon devresi), bu sinyali yaklaşık **x1100 kat** yükseltir.
-   - Sinyal, $1.65\text{ V}$ sanal toprak (DC bias) üzerine bindirilerek **0.0 V – 3.3 V** aralığına ötelenir. Böylece ADC'nin tam ölçekli (Full-Scale) giriş aralığı eksiksiz kullanılır.
-3. **Fiziksel Elektrot Aralığı (Inter-Electrode Distance - IED):**
-   - Uluslararası **SENIAM** standardına göre iki ölçüm elektrotu arasındaki merkezden merkeze mesafe tam **20 mm** olmalıdır.
-   - *20 mm'den dar olursa:* Potansiyel farkı çok küçülür, SNR düşer.
-   - *20 mm'den geniş olursa:* Komşu parmak kaslarından çapraz sinyal (crosstalk) biner.
-4. **Frekans Aralığı (Bandwidth):**
-   - İnsan yüzeyel EMG (sEMG) enerji spektrumu: **20 Hz – 450 Hz**.
-   - Analog filtre kesim frekansları: $f_{HPF} = 20\text{ Hz}$, $f_{LPF} = 450\text{ Hz}$.
-
----
-
-### Soru 2: ESP32-S3'te Kaç SPI Veri Yolu Vardır?
-ESP32-S3 mikrokontrolcüsünde toplam **4 adet SPI denetleyicisi** bulunmaktadır:
-* **SPI0 ve SPI1:** Çipin kendi dahili SPI Flash ve harici PSRAM hafıza erişimi için ayrılmıştır (kullanıcı koduna kapalıdır).
-* **SPI2 (FSPI):** Kullanıcıya açık 1. bağımsız SPI veri yoludur. DMA (Direct Memory Access) desteklidir. 80 MHz clock hızına kadar çalışabilir.
-* **SPI3 (HSPI):** Kullanıcıya açık 2. bağımsız SPI veri yoludur. Bu da tamamen bağımsız ve DMA desteklidir.
-
-> **Hocaya Net Cevap:** ESP32-S3 üzerinde harici çevre birimleri için **2 adet bağımsız kullanıcı SPI arayüzü (SPI2/FSPI ve SPI3/HSPI)** vardır. Harici ADC veya SPI ekran kullanılacaksa SPI2 (FSPI) tahsis edilir.
+1. **Input Dynamic Voltage Range:**
+   - Raw sEMG potentials generated across superficial forearm muscles: **10 µV – 5 mV (Peak-to-Peak)**.
+   - Electrodes transduce ionic cellular currents into electronic microvolt potentials.
+2. **Amplified Output Dynamic Range:**
+   - The Analog Front-End (AFE / Instrumentation Stage) provides a composite gain of approximately **x1100 V/V**.
+   - The output is biased around a virtual ground midpoint of 1.65 V DC, spanning a clean **0.0 V – 3.3 V** scale to utilize the full dynamic resolution of the 12-bit ADC.
+3. **Physical Inter-Electrode Distance (IED):**
+   - In accordance with the international **SENIAM** (Surface ElectroMyoGraphy for the Non-Invasive Assessment of Muscles) guidelines, the center-to-center spacing between differential pairs is fixed at **20 mm**.
+   - Spacing narrower than 20 mm diminishes differential potential magnitude (poor SNR), whereas spacing wider than 20 mm introduces severe muscle crosstalk from adjacent digital flexors/extensors.
+4. **Frequency Bandwidth:**
+   - Spectral energy density of surface EMG: **20 Hz – 450 Hz**.
+   - Analog filter corner frequencies: f_{HPF} = 20 Hz (eliminates motion artifacts), f_{LPF} = 450 Hz (anti-aliasing).
 
 ---
 
-### Soru 3: Bus Aralığı / Saat Hızı ve Bant Genişliği (Bus Timings & Bandwidth)
+### 2.2 SPI Peripheral Architecture on ESP32-S3
+The ESP32-S3 system-on-chip incorporates **4 distinct SPI controller peripherals**:
+* **SPI0 & SPI1:** Dedicated strictly to internal Flash and external PSRAM memory bus transactions (inaccessible to user firmware).
+* **SPI2 (FSPI):** General-purpose, master/slave SPI controller available to user applications. Features independent DMA channels and supports clock frequencies up to 80 MHz.
+* **SPI3 (HSPI):** Second fully independent, general-purpose SPI controller available to user applications, also DMA-capable.
 
-#### A. SPI Veri Yolu (MCP3008 ADC Kullanılması Durumunda):
-* **Besleme Gerilimi:** $V_{DD} = 3.3\text{ V}$
-* **Maksimum SPI Saat Hızı:** MCP3008 Datasheet Bölüm 6.2 uyarınca $3.3\text{ V}$ altında maksimum clock hızı **1.35 MHz – 2.0 MHz**'dir.
-* **ESP32-S3 SPI Saat Seçimi:** **1.5 MHz** ($T_{CLK} = 0.667\text{ µs}$).
-* **Zamanlama Hesabı (1 Örnek Okuma):**
-  - MCP3008 protokolü: 1 Start Biti + 4 Konfigürasyon Biti + 1 Boş/Sample Biti + 10 Data Biti = Toplam **17 Clock Cycle** (SPI transferinde pratik olarak 3 byte = 24 clock döngüsü kullanılır).
-  - 1 kanal dönüşüm süresi: $24 \times 0.667\text{ µs} = 16\text{ µs}$.
-  - 4 kanalın tamamını ardışık okuma süresi: $4 \times 16\text{ µs} = 64\text{ µs}$.
-  - 2000 Hz örnekleme periyodu: $T_{sample} = 1 / 2000 = 500\text{ µs}$.
-  - **SPI Bus Kullanım Oranı (Bus Utilization):** $64\text{ µs} / 500\text{ µs} = \%12.8$!
-  - **Sonuç:** SPI veri yolunun $\%87.2$'si boştadır. Sıfır gecikme ve sıfır darboğaz ile çalışır.
-
-#### B. I2C Veri Yolu (MPU-6050 IMU Kol Kaldırma Sensörü):
-* **Protokol:** I2C Fast-Mode (**400 kHz** saat hızı).
-* **Veri Paketi:** 3 eksen ivme + 1 sıcaklık + 3 eksen jiroskop = Toplam 14 byte veri ($14 \times 9\text{ bit} \approx 126\text{ saat döngüsü} \approx 0.315\text{ ms}$).
-* **IMU Örnekleme Hızı:** 100 Hz ($T = 10\text{ ms}$).
-* **I2C Bus Kullanım Oranı:** $0.315\text{ ms} / 10\text{ ms} = \%3.15$!
-* **Sonuç:** I2C veri yolu son derece rahat çalışır.
+> **Definitive Summary:** The ESP32-S3 provides **2 dedicated, user-accessible SPI controllers (SPI2 and SPI3)**. For external ADC integration, **SPI2 (FSPI)** is designated.
 
 ---
 
-### Soru 4: "ADC'ye Gerek Kalmayabilir, ESP32'ninki Yeter Belki" (Stratejik Analiz)
+### 2.3 Bus Timings, Clock Frequencies & Bandwidth Utilization
 
-Danışman hocanızın bu yorumu hem maliyeti düşüren hem de donanımı sadeleştiren **çok doğru ve vizyoner bir yaklaşımdır**.
+#### A. SPI Bus Interface (MCP3008 ADC Scenario):
+* **Supply Voltage:** V_{DD} = 3.3 V.
+* **Maximum SPI Clock Rating:** Per MCP3008 Datasheet Section 6.2, maximum operating frequency at 3.3 V is **1.35 MHz – 2.0 MHz**.
+* **ESP32-S3 Master Clock Setting:** **1.5 MHz** (T_{CLK} = 0.667 µs).
+* **Single-Sample Acquisition Timing:**
+  - Protocol overhead: 1 Start Bit + 4 Configuration Bits + 1 Sample/Null Bit + 10 Data Bits = **17 Clock Cycles** (implemented via 3-byte / 24-clock SPI transactions).
+  - Single-channel read latency: 24 \times 0.667 µs = 16 µs.
+  - Sequential 4-channel read latency: 4 \times 16 µs = 64 µs.
+  - 2000 Hz sampling period: T_{sample} = 1 / 2000 Hz = 500 µs.
+  - **Bus Utilization Factor:** 64 µs / 500 µs = \mathbf{12.8\%}.
+  - **Conclusion:** Over 87% of the SPI bus remains idle, guaranteeing deterministic, zero-jitter telemetry.
 
-#### ESP32-S3 Dahili ADC'sinin Güçlü Yönleri (Neden Yeterli Olabilir?):
-1. **Continuous ADC Driver (DMA Modu):**  
-   ESP32-S3'te I2S/DMA tabanlı kesintisiz analog örnekleme motoru bulunur. Bu modda CPU'ya hiç yük bindirmeden, 4 analog pini (GPIO 1, 2, 3, 4) saniyede kanal başı 2 kHz (hatta 20 kHz) hızla DMA arabelleğine akıtabilir.
-2. **Wi-Fi Çakışma Sorunu Çözüldü:**  
-   Eski ESP32'de Wi-Fi açılınca ADC2 kilitleniyordu. ESP32-S3'te ise sadece ADC1 pinleri kullanıldığında (GPIO 1 - 10) Wi-Fi açıkken analog okuma sorunsuz devam eder.
-3. **eFuse Fabrika Kalibrasyonu:**  
-   ESP32-S3 yongalarında üretim aşamasında kalibre edilmiş voltaj referans eğrileri yer alır (`esp_adc_cal` / `adc_cali_curve_fitting`). Doğrusallık hatası yazılımsal olarak telafi edilir.
-4. **Maliyet ve Boyut:**  
-   Harici ADC çipini ve SPI kablolamasını tamamen ortadan kaldırır. Giyilebilir kol bandının boyutunu küçültür.
+#### B. I2C Bus Interface (MPU-6050 IMU Arm Elevation):
+* **Bus Speed:** I2C Fast-Mode (**400 kHz**).
+* **Burst Payload:** 3-axis Accelerometer + Temperature + 3-axis Gyroscope = 14 contiguous bytes (14 \times 9 bits \approx 126 cycles \approx 0.315 ms).
+* **Sampling Rate:** 100 Hz (T = 10 ms).
+* **Bus Utilization Factor:** 0.315 ms / 10 ms = \mathbf{3.15\%}.
 
-#### Tek Olası Risk ve Alınacak Önlem:
-* Wi-Fi RF sinyal vericisi veri paketi gönderirken $3.3\text{ V}$ hattında mikro-dalgalanmalar (RF ripple) oluşturabilir.
-* **Donanımsal Önlem:** Analog giriş pinlerine $100\text{ nF}$ seramik dekuplaj kondansatörü ve $1\text{ k}\Omega$ RC alçak geçiren filtre eklenir.
+---
 
-#### Jüriye / Hocaya Sunulacak Mühendislik Kararı:
-* **PLAN A (Öncelikli & Hocanın Önerisi):** ESP32-S3 Dahili ADC1 + DMA Continuous Mode. Sıfır ekstra maliyet, kompakt giyilebilir tasarım.
-* **PLAN B (Yedek / Sigorta):** SPI2 portu üzerinden MCP3008 harici ADC. (Eğer Wi-Fi RF gürültüsü yüksek çıkarsa tak-çalıştır yedek hat).
+### 2.4 Internal vs. External ADC: Feasibility of ESP32-S3 Internal ADC
+
+The proposal to utilize the **ESP32-S3 internal SAR ADC** in place of a separate converter IC is technically sound and highly advantageous:
+
+#### Advantages of ESP32-S3 Internal ADC:
+1. **Continuous ADC Driver (DMA Mode):**
+   The ESP32-S3 features a dedicated I2S/DMA continuous sampling engine. It continuously fills circular DMA buffers with multi-channel conversions (e.g., 4 channels at 2 kHz to 20 kHz each) without consuming CPU cycles.
+2. **Immunity from Wi-Fi Collision on ADC1:**
+   In legacy ESP32 chips, activating the Wi-Fi radio incapacitated ADC2. On the ESP32-S3, dedicating **ADC1 pins (GPIO 1 through GPIO 4)** ensures zero interference from active RF transmissions.
+3. **eFuse Factory Calibration:**
+   ESP32-S3 chips are burned with factory calibration parameters (`adc_cali_curve_fitting`), compensating for non-linearities and offset drift across temperature.
+4. **Form Factor & Bill of Materials (BOM):**
+   Eliminating the external ADC IC reduces PCB footprint, component count, and solder joints on the wearable armband.
+
+#### Engineering Risk Mitigation (Plan A vs. Plan B):
+* **Primary Approach (Plan A):** Utilize ESP32-S3 ADC1 in Continuous DMA mode with an external 100 nF decoupling capacitor and 1 kΩ passive RC low-pass filter on each analog input.
+* **Redundant Approach (Plan B):** Retain the SPI2-driven MCP3008 architecture as an immediate drop-in fallback if high-power RF burst noise degrades low-amplitude sEMG baselines.
