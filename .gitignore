@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C / C++ / Embedded Build outputs
+build/
+*.o
+*.obj
+*.elf
+*.bin
+*.hex
+.pio/
+.espressif/
+
+# Environments & Virtual Envs
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary & Log files
+*.log
+*.tmp
+*.bak
