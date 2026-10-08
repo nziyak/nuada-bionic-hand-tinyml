@@ -24,24 +24,28 @@ The entire 4-channel sEMG + 6-axis IMU + TinyML hardware pipeline is procured fo
 | **1x** | **ESP32-S3 Development Board** | Dual-core Xtensa LX7 @ 240 MHz, AI Vector Instructions, 512 KB SRAM, 2x SPI, I2C, 12-bit ADC1 *(ESP32-S3 DevKitC-1 or Seeed Studio XIAO ESP32-S3)* | ~₺220 - ₺280 | ~$7.50 |
 | **4x** | **AD8232 Biopotential Modules** | Single-lead analog front-end breakout boards (red PCB), each bundled with a 3-lead 3.5 mm medical snap cable. Used unmodified. | 4 x ~₺110 = ~₺440 | ~$13.50 |
 | **1x** | **MPU-6050 6-Axis IMU Module** | 3-axis accelerometer + 3-axis gyroscope with integrated DMP, I2C Fast-Mode interface. | ~₺70 - ₺90 | ~$2.50 |
-| **1 Pk** | **Stainless-Steel Snap Fasteners** | 3.7 mm / 4 mm male/female metal snaps perching through the armband to form reusable **dry electrodes**. | ~₺25 - ₺40 | ~$1.00 |
-| **1x** | **Elastic Velcro Armband** | Breathable neoprene / elastic sport strap to secure dry snap electrodes firmly against forearm skin. | ~₺40 - ₺60 | ~$1.50 |
+| **1 Tube** | **Medical Conductive Gel (250 ml)** | Medical EKG/Ultrasound conductive gel applied in micro-droplets on snaps for multi-subject clean data acquisition without single-use pad waste. | ~₺35 - ₺50 | ~$1.20 |
+| **1 Pk** | **Stainless-Steel Snap Fasteners** | 3.7 mm / 4 mm male/female metal snaps perching through the armband to form reusable **snap electrodes**. | ~₺25 - ₺40 | ~$1.00 |
+| **1x** | **Elastic Velcro Armband** | Breathable neoprene / elastic sport strap to secure snap electrodes firmly against forearm skin across diverse arm sizes. | ~₺40 - ₺60 | ~$1.50 |
 | **1 Pk** | **Breadboard Jumper Wires** | Female-to-female and female-to-male jumper wires for solderless interconnects. | ~₺35 | ~$1.00 |
-| **TOTAL** | **Complete Wearable TinyML Hardware Kit** | **Zero Gel, Zero Custom PCB, Zero Soldering Required** | **~₺830 - ₺945** | **~$27.00** |
+| **TOTAL** | **Complete Wearable TinyML Hardware Kit** | **Reusable Across 100+ Subjects, Zero Custom PCB, Zero Soldering Required** | **~₺865 - ₺995** | **~$28.00** |
+
 
 ---
 
-## 3. Physical Dry-Electrode Construction & Domain Shift Elimination
+## 3. Physical Snap-Electrode Construction & Multi-Subject Standardization Protocol
 
 ```
    [ OUTER ARMBAND SURFACE ] ─── (Female Snap Connector: Plugs into AD8232 Cable)
               │
       [ ELASTIC FABRIC ]     ─── (20 mm SENIAM Spacing Between Pairs)
               │
-   [ INNER ARMBAND SURFACE ] ─── (Smooth Stainless-Steel Stud: Direct Dry Contact with Skin)
+   [ INNER ARMBAND SURFACE ] ─── (Smooth Stainless-Steel Stud: Direct Contact with Skin)
+              │
+     [ MICRO GEL DROPLET ]   ─── (Optional: 1 drop of conductive gel for ultra-low impedance)
 ```
 
-### Construction Protocol:
+### Construction & Multi-Subject Hygiene:
 1. **Electrode Material:** Standard stainless-steel snap buttons (3.7 mm or 4 mm stud diameter).
 2. **Fabric Mounting:** Snaps are riveted through the elastic armband at the four designated muscle sites:
    * **Pair 1 (CH1):** *Flexor Digitorum Superficialis* (Anterior/Medial)
@@ -49,8 +53,15 @@ The entire 4-channel sEMG + 6-axis IMU + TinyML hardware pipeline is procured fo
    * **Pair 3 (CH3):** *Extensor Digitorum* (Posterior/Central)
    * **Pair 4 (CH4):** *Extensor Pollicis & Indicis* (Posterior/Radial)
    * **Ground / Reference:** Single snap located over the bony elbow *Olecranon*.
-3. **SENIAM Compliance:** Each differential channel pair is placed with exact **20 mm center-to-center inter-electrode distance (IED)**, oriented parallel to longitudinal muscle fibers.
-4. **Zero Domain Shift Guarantee:** Because training data is gathered using the exact same dry snap armband, the machine learning models learn the real-world impedance and motion artifact profile of dry metal interfaces, preventing accuracy collapse during live testing.
+3. **Dual-Mode Operation (Gel-Assisted vs. True Dry):**
+   * **Phase 1 (Proof-of-Concept / Gel-Assisted):** Apply a single micro-droplet of conductive gel directly onto each metal snap. The elastic band provides mechanical pressure while the gel eliminates skin-contact impedance. Wipe clean with an alcohol wipe after each subject session. Zero disposable waste.
+   * **Phase 2 (True Dry Benchmark):** Test the exact same armband dry to evaluate noise tolerance and domain shift resistance.
+
+### Multi-Subject Anatomical Normalization Rules:
+* **The 5 cm Height Rule:** Measure exactly 5 cm distal from the cubital elbow crease. Align the top edge of the armband to this marker on every subject.
+* **Angular Landmark:** Align Channel 1 with the medial epicondyle axis to ensure identical spatial muscle mapping across varying forearm circumferences (20 cm to 30 cm).
+* **MVC Normalization:** Prior to recording, record a 3-second Maximum Voluntary Contraction (full fist) per subject to normalize signal amplitude into a standardized [0, 1] range, preventing variations in muscle volume from corrupting classification.
+
 
 ---
 
