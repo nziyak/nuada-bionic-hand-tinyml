@@ -48,13 +48,25 @@ Eagle CAD `.brd` ve `.sch` dosyalarından çıkarılan mikrometre hassasiyetinde
 
 ## 3. Fiziksel Donanım Yerleşim Haritası
 
-Kartın üzerindeki elemanların birebir fiziksel yerleşimi ve lehimleme hedefleri aşağıdaki haritada detaylı olarak gösterilmiştir:
+Kartın üzerindeki elemanların birebir fiziksel yerleşimi ve lehimleme hedefleri hem **gerçek kart fotoğrafı** hem de **CAD baskı devre şeması** üzerinde aşağıda detaylı olarak gösterilmiştir:
 
-![AD8232 EMG Modifikasyon Haritası](./ad8232_emg_mod_guide.png)
+### A. Gerçek Fiziksel Kart Üzerinde Parça Konumları (Fotoğraf Rehberi)
+Aşağıdaki görselde, elinizde tuttuğunuz kırmızı AD8232 kartının yüksek çözünürlüklü makro fotoğrafı üzerinde değiştirilecek parçalar doğrudan işaretlenmiştir:
 
-*Görseli ayrı bir sekmede veya tam ekranda açmak için:* **[🖼️ ad8232_emg_mod_guide.png Görselini Aç (Tıklayın)](./ad8232_emg_mod_guide.png)**
+![AD8232 Gerçek Kart Üzerinde Parça Haritası](./ad8232_gercek_kart_haritasi.png)
 
-*(Not: Markdown dosyasını IDE içinde önizleme modunda (Ctrl+Shift+V / Markdown Preview) açtığınızda yukarıdaki grafik harita renkli ve yüksek çözünürlüklü olarak doğrudan belgenin içinde görüntülenecektir).*
+*Gerçek kart fotoğrafını tam ekranda açmak için:* **[📸 ad8232_gercek_kart_haritasi.png Görselini Aç (Tıklayın)](./ad8232_gercek_kart_haritasi.png)**
+
+---
+
+### B. CAD Baskı Devre ve Yol Şeması (Eagle PCB Haritası)
+Yolların ve komşu komponentlerin mikro koordinatlarını gösteren teknik CAD yerleşimi:
+
+![AD8232 CAD Modifikasyon Haritası](./ad8232_emg_mod_guide.png)
+
+*CAD haritasını tam ekranda açmak için:* **[🖼️ ad8232_emg_mod_guide.png Görselini Aç (Tıklayın)](./ad8232_emg_mod_guide.png)**
+
+*(Not: Markdown dosyasını IDE içinde önizleme modunda (`Ctrl + Shift + V` / Markdown Preview) açtığınızda yukarıdaki haritalar renkli ve yüksek çözünürlüklü olarak doğrudan belgenin içinde görüntülenecektir).*
 
 ---
 
