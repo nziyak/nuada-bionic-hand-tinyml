@@ -118,5 +118,5 @@ Farklı insanların kol kalınlığı değiştiğinde elektrotların kaymasını
 
 1. ❌ **50'lik / 100'lük Tek Kullanımlık Ped Paketleri:** ALMAYIN. (Tüp jel + çıtçıt bant ile sonsuz ölçüm yapacağız, pedler hemen biter).
 2. ❌ **Harici ADC Modülü (ADS1115 vb.):** ALMAYIN. (ESP32-S3'ün kendi dahili 12-bit ADC1'i yetiyor).
-3. ❌ **Op-Amp Entegreleri (TL074, INA vb.), Kondansatörler, Dirençler:** ALMAYIN. (Modülleri olduğu gibi kullanıyoruz).
+3. ❌ **Op-Amp Entegreleri (TL074, INA vb.):** ALMAYIN. (Sıfırdan amfi devresi kurmuyoruz, hazır AD8232 kullanıyoruz. Eğer 1 adet AD8232 kartını EMG için modifiye etmek isterseniz gereken 1-2 adet mercimek kondansatörü (102 ve 221) okul atölyesinden temin edebilirsiniz; detaylar için [AD8232 EMG Modifikasyon Rehberi](ad8232_emg_modifikasyon_rehberi.md)'ne bakınız).
 4. ❌ **Voltaj Seviye Dönüştürücü:** ALMAYIN. (Tüm modüllerimiz doğrudan 3.3V ile tam uyumludur).

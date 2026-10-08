@@ -22,7 +22,7 @@ The entire 4-channel sEMG + 6-axis IMU + TinyML hardware pipeline is procured fo
 | Qty | Component | Technical Function / Model | Estimated Cost (TRY) | Estimated Cost (USD) |
 |---|---|---|---|---|
 | **1x** | **ESP32-S3 Development Board** | Dual-core Xtensa LX7 @ 240 MHz, AI Vector Instructions, 512 KB SRAM, 2x SPI, I2C, 12-bit ADC1 *(ESP32-S3 DevKitC-1 or Seeed Studio XIAO ESP32-S3)* | ~₺220 - ₺280 | ~$7.50 |
-| **4x** | **AD8232 Biopotential Modules** | Single-lead analog front-end breakout boards (red PCB), each bundled with a 3-lead 3.5 mm medical snap cable. Used unmodified. | 4 x ~₺110 = ~₺440 | ~$13.50 |
+| **4x** | **AD8232 Biopotential Modules** | Single-lead analog front-end breakout boards (red PCB), each bundled with a 3-lead 3.5 mm medical snap cable. Used unmodified (or 1 prototype unit modded for comparative analysis, see [AD8232 EMG Mod Guide](ad8232_emg_modifikasyon_rehberi.md)). | 4 x ~₺110 = ~₺440 | ~$13.50 |
 | **1x** | **MPU-6050 6-Axis IMU Module** | 3-axis accelerometer + 3-axis gyroscope with integrated DMP, I2C Fast-Mode interface. | ~₺70 - ₺90 | ~$2.50 |
 | **1 Tube** | **Medical Conductive Gel (250 ml)** | Medical EKG/Ultrasound conductive gel applied in micro-droplets on snaps for multi-subject clean data acquisition without single-use pad waste. | ~₺35 - ₺50 | ~$1.20 |
 | **1 Pk** | **Stainless-Steel Snap Fasteners** | 3.7 mm / 4 mm male/female metal snaps perching through the armband to form reusable **snap electrodes**. | ~₺25 - ₺40 | ~$1.00 |
