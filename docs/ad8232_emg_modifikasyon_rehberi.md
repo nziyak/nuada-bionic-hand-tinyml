@@ -48,11 +48,17 @@ Eagle CAD `.brd` ve `.sch` dosyalarından çıkarılan mikrometre hassasiyetinde
 
 ## 3. Fiziksel Donanım Yerleşim Haritası
 
-Kartın üzerindeki elemanların birebir fiziksel yerleşimi ve lehimleme hedefleri:
+Kartın üzerindeki elemanların birebir fiziksel yerleşimi ve lehimleme hedefleri aşağıdaki haritada detaylı olarak gösterilmiştir:
 
-![AD8232 EMG Modifikasyon Haritası](ad8232_emg_mod_guide.png)
+![AD8232 EMG Modifikasyon Haritası](./ad8232_emg_mod_guide.png)
 
-### ASCII Kaba Referans Kılavuzu:
+*Görseli ayrı bir sekmede veya tam ekranda açmak için:* **[🖼️ ad8232_emg_mod_guide.png Görselini Aç (Tıklayın)](./ad8232_emg_mod_guide.png)**
+
+*(Not: Markdown dosyasını IDE içinde önizleme modunda (Ctrl+Shift+V / Markdown Preview) açtığınızda yukarıdaki grafik harita renkli ve yüksek çözünürlüklü olarak doğrudan belgenin içinde görüntülenecektir).*
+
+---
+
+### ASCII Kaba Referans Şeması (Hızlı Bakış İçin):
 ```
  +---------------------------------------------------------+
  |  [ 3.5 mm JACK ]                         (C6) [0805]    |  <- C6 en üst kenardadır
