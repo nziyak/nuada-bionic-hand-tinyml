@@ -1,0 +1,23 @@
+{
+  "name": "nuada-virtual-bionic-hand",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Fully virtual 3-finger bionic hand simulation (Three.js + TypeScript + Vite). No hardware control.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "mock:ws": "node tools/mock-esp32-server.mjs"
+  },
+  "dependencies": {
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.187.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "ws": "^8.22.2"
+  }
+}

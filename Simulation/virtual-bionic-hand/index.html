@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nuada · Virtual Bionic Hand Simulation</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <div id="app">
+      <main id="viewport">
+        <div class="overlay top-left">
+          <div class="title">NUADA <span>Virtual Bionic Hand</span></div>
+          <div class="chip chip-safe">100% virtual · no hardware / motor / servo control</div>
+        </div>
+        <div class="overlay top-right">
+          <div id="status-badge" class="badge ok">STARTING</div>
+        </div>
+        <div class="overlay bottom-left hint">
+          Drag: orbit · Wheel: zoom · Right-drag: pan<br />
+          Keys: W/S pitch · A/D yaw · Q/E supination/pronation · Space pause · R reset IMU
+        </div>
+        <div id="gesture-banner" class="overlay bottom-right">
+          <div id="banner-name">Rest</div>
+          <div id="banner-desc">Relaxed neutral pose</div>
+        </div>
+      </main>
+
+      <aside id="panel">
+        <section class="card">
+          <h2>Data source</h2>
+          <div class="segmented" id="mode-switch">
+            <button data-mode="simulation" class="active">Simulation Mode</button>
+            <button data-mode="live">Live Data Mode</button>
+          </div>
+          <div id="sim-options" class="stack">
+            <label class="check"><input type="checkbox" id="auto-scenario" checked /> Auto scenario</label>
+            <label class="check"><input type="checkbox" id="random-scenario" /> Random gestures</label>
+          </div>
+          <div id="live-options" class="stack hidden">
+            <div class="row">
+              <input type="text" id="ws-url" value="ws://localhost:8080" spellcheck="false" />
+              <button id="ws-connect">Connect</button>
+            </div>
+            <div id="ws-status" class="muted">Not connected. Receive-only JSON stream, no commands are sent.</div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Status</h2>
+          <div class="grid2">
+            <div class="kv"><span>State</span><b id="v-state">-</b></div>
+            <div class="kv"><span>FPS</span><b id="v-fps">0</b></div>
+            <div class="kv"><span>TinyML latency</span><b id="v-latency">0 ms</b></div>
+            <div class="kv"><span>Data age</span><b id="v-age">-</b></div>
+            <div class="kv"><span>Packets</span><b id="v-packets">0</b></div>
+            <div class="kv"><span>Rejected</span><b id="v-invalid">0</b></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Gesture</h2>
+          <div class="gesture-head">
+            <div class="swatch" id="g-swatch"></div>
+            <div>
+              <div id="g-name" class="big">Rest</div>
+              <div id="g-phase" class="muted">safe</div>
+            </div>
+            <div class="conf"><b id="g-conf">0%</b><span>confidence</span></div>
+          </div>
+          <div class="bar"><i id="g-conf-bar"></i></div>
+          <div id="gesture-buttons" class="gesture-buttons"></div>
+        </section>
+
+        <section class="card">
+          <h2>Fingers</h2>
+          <label class="check"><input type="checkbox" id="manual-fingers" /> Manual finger control</label>
+          <div id="finger-rows"></div>
+        </section>
+
+        <section class="card">
+          <h2>IMU (virtual MPU-6050)</h2>
+          <label class="check"><input type="checkbox" id="manual-imu" /> Manual IMU override</label>
+          <div id="imu-rows"></div>
+          <div class="kv"><span>Forearm rotation</span><b id="v-pronation">Neutral</b></div>
+          <button id="btn-imu-reset" class="small">Reset IMU</button>
+        </section>
+
+        <section class="card">
+          <h2>Virtual sEMG (4 ch)</h2>
+          <canvas id="emg-canvas" height="150"></canvas>
+          <div id="emg-legend" class="legend"></div>
+        </section>
+
+        <section class="card">
+          <h2>Controls</h2>
+          <div class="btn-grid">
+            <button id="btn-pause">Pause</button>
+            <button id="btn-reset">Reset Hand</button>
+            <button id="btn-safe" class="warn">Safe Position</button>
+            <button id="btn-camera">Reset Camera</button>
+            <button id="btn-bad">Inject bad packet</button>
+            <button id="btn-model-reset">Built-in model</button>
+          </div>
+          <label class="file">Load GLB rig <input type="file" id="file-model" accept=".glb,.gltf,model/gltf-binary" /></label>
+          <div id="model-msg" class="muted"></div>
+        </section>
+
+        <footer class="muted">
+          Pure software visualisation. No real arm, servo, motor, actuator, sensor or hardware control is implemented.
+        </footer>
+      </aside>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+
