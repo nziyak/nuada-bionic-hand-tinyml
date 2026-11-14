@@ -2,7 +2,8 @@
 """
 Nuada Bionic Hand - Synchronized 4x sEMG + 1x MPU6050 Live Recorder & Multi-Subject Session Manager
 Supports 0°, 45°, and 90° limb position angles, randomized trials to prevent overfitting,
-and logs raw labeled datasets for TinyML training.
+operator-controlled Enter-to-record trigger for zero-stress flawless data collection,
+and logs raw labeled datasets for TinyML training. Includes --mock mode for testing without hardware.
 """
 
 import os
@@ -16,8 +17,7 @@ from datetime import datetime
 try:
     import serial
 except ImportError:
-    print("[HATA] pyserial kütüphanesi bulunamadı! 'pip install pyserial' çalıştırınız.")
-    sys.exit(1)
+    serial = None
 
 # Sabitler
 ACCEL_SCALE = 8192.0  # LSB / g (±4g)
@@ -29,6 +29,92 @@ ANGLE_DESCRIPTIONS = {
     45: "45° (Ön Kol Yarı Eğik / 45 Derece Açı)",
     90: "90° (Ön Kol Dikey / Dirsekten 90 Derece Dik)"
 }
+
+GESTURE_DESCRIPTIONS = {
+    "rest": "El ve parmaklar tamamen serbest, kaslar gevşek.",
+    "fist": "Tüm parmakları sıkıca yumruk yapın ve sabit tutun (FDS kası).",
+    "open_hand": "Tüm parmakları sonuna kadar gergin şekilde açın ve tutun (ED kası).",
+    "pinch": "Başparmak ve işaret parmağı uçlarını birbirine bastırarak tutun (FPL + FDS).",
+    "point": "İşaret parmağını ileri uzatın, diğer parmakları bükülü tutun (EI kası)."
+}
+
+class MockSerialDevice:
+    """ESP32 donanımı bağlı değilken gerçekçi sentetik EMG ve IMU verisi üretir."""
+    def __init__(self):
+        self.start_ms = time.time() * 1000
+        self.current_gesture = "rest"
+        self.current_angle = 0
+
+    def set_context(self, gesture, angle):
+        self.current_gesture = gesture.lower()
+        self.current_angle = angle
+
+    def reset_input_buffer(self):
+        pass
+
+    def readline(self):
+        time.sleep(0.01)  # 100 Hz simülasyonu (10 ms)
+        now_ms = int(time.time() * 1000 - self.start_ms)
+        g = self.current_gesture
+        ang = self.current_angle
+
+        # Rastgele mikro gürültü
+        n1 = random.randint(-30, 30)
+        n2 = random.randint(-30, 30)
+        n3 = random.randint(-30, 30)
+        n4 = random.randint(-30, 30)
+
+        # Harekete göre dinamik kas aktivasyonu (0-4095 ADC)
+        if g == "rest":
+            e1, e2, e3, e4 = 2048 + n1, 2048 + n2, 2048 + n3, 2048 + n4
+        elif g == "fist":
+            e1 = 3450 + n1 * 2  # FDS yüksek
+            e2 = 3200 + n2 * 2  # FPL yüksek
+            e3 = 2150 + n3
+            e4 = 2400 + n4
+        elif g == "open_hand":
+            e1 = 2100 + n1
+            e2 = 2050 + n2
+            e3 = 3550 + n3 * 2  # ED yüksek
+            e4 = 2300 + n4
+        elif g == "pinch":
+            e1 = 2900 + n1 * 2  # FDS orta
+            e2 = 3400 + n2 * 2  # FPL yüksek
+            e3 = 2100 + n3
+            e4 = 2150 + n4
+        elif g == "point":
+            e1 = 2200 + n1
+            e2 = 2100 + n2
+            e3 = 2800 + n3 * 2
+            e4 = 3300 + n4 * 2  # EI yüksek
+        else:
+            e1, e2, e3, e4 = 2048 + n1, 2048 + n2, 2048 + n3, 2048 + n4
+
+        # Açıya göre IMU yerçekimi dağılımı (±4g aralığı, 1g = 8192 LSB)
+        if ang == 0:
+            ax = random.randint(-80, 80)
+            ay = random.randint(-100, 100)
+            az = 8192 + random.randint(-80, 80)
+        elif ang == 45:
+            ax = random.randint(-80, 80)
+            ay = 5792 + random.randint(-80, 80)
+            az = 5792 + random.randint(-80, 80)
+        elif ang == 90:
+            ax = random.randint(-80, 80)
+            ay = 8192 + random.randint(-80, 80)
+            az = random.randint(-120, 120)
+        else:
+            ax, ay, az = 0, 0, 8192
+
+        gx = random.randint(-20, 20)
+        gy = random.randint(-20, 20)
+        gz = random.randint(-20, 20)
+
+        line = f"DATA,{now_ms},{e1},{e2},{e3},{e4},{ax},{ay},{az},{gx},{gy},{gz}\n"
+        return line.encode("utf-8")
+
+    def close(self):
+        pass
 
 def find_serial_port():
     """Detect common ESP32 serial ports on Linux."""
@@ -54,7 +140,9 @@ def parse_args():
     parser.add_argument("--trials-per-angle", type=int, default=2,
                         help="Rehberli modda açı başına tekrar sayısı (varsayılan: 2)")
     parser.add_argument("--guided", action="store_true",
-                        help="0°, 45° ve 90° açılarında etkileşimli, geri sayımlı çoklu denek protokolünü başlatır.")
+                        help="0°, 45° ve 90° açılarında operatör kontrollü rehberli oturumu başlatır.")
+    parser.add_argument("--mock", action="store_true",
+                        help="ESP32 donanımı olmadan simülasyon/demo modunda çalıştırır.")
     return parser.parse_args()
 
 def make_mini_bar(val, max_val=4095, width=6):
@@ -76,6 +164,9 @@ def record_trial(ser, csv_path, gesture, duration, subject="common", angle=0, po
         "ax_g,ay_g,az_g,gx_dps,gy_dps,gz_dps,"
         "gesture_label,angle_deg,posture,subject,trial\n"
     )
+
+    if hasattr(ser, "set_context"):
+        ser.set_context(gesture, angle)
 
     ser.reset_input_buffer()
     with open(csv_path, "w", encoding="utf-8") as f_out:
@@ -173,16 +264,18 @@ def record_trial(ser, csv_path, gesture, duration, subject="common", angle=0, po
 
 def run_guided_protocol(ser, subject, root_data_dir, trials_per_angle=2):
     """
-    0°, 45° ve 90° açı durumlarını içeren tam rehberli oturum.
+    0°, 45° ve 90° açı durumlarını içeren, operatör kontrollü (Enter ile tetiklenen) rehberli oturum.
     """
     print("\n" + "="*75)
     print(f"  NUADA ÇOKLU DENEK & ÇOKLU AÇI REHBERLİ KAYIT SİSTEMİ: [{subject.upper()}]")
     print("="*75)
-    print("Protokol Tasarımı:")
+    print("Operatör Kontrollü Protokol:")
     print(" • Açılar       : 0° (Yatay), 45° (Yarı Eğik), 90° (Dikey / Dik)")
     print(f" • Hareketler   : {', '.join([g.upper() for g in CORE_GESTURES])}")
     print(f" • Tekrar Sayısı: Her açı için {trials_per_angle} tur")
-    print(" • Zamanlama    : 3 sn hazırlık -> 3 sn KASILMA/TUTUŞ -> 3 sn DİNLENME")
+    print(" • Kontrol      : Her harekette siz deneğe talimatı verip hazır olduğunda [ENTER]'a basarsınız.")
+    print(" • Kayıt Süresi : [ENTER]'a basıldığı an 3 saniye sabit kasılma/tutuş kaydedilir.")
+    print(" • Dinlenme     : Denek gevşer, siz sıradaki hareketi anlatıp hazır olunca devam edersiniz.")
     print(" • Overfit Önlem: Hareket sıraları her turda rastgele karıştırılır!")
     print("="*75)
 
@@ -194,13 +287,12 @@ def run_guided_protocol(ser, subject, root_data_dir, trials_per_angle=2):
     for angle in TARGET_ANGLES:
         angle_desc = ANGLE_DESCRIPTIONS[angle]
         print("\n" + "#"*75)
-        print(f"  >>> KOL AÇISINI DEĞİŞTİRİN: [ {angle_desc.upper()} ] <<<")
+        print(f"  >>> KOL AÇISINI AYARLAYIN: [ {angle_desc.upper()} ] <<<")
         print("#"*75)
         print(f"Lütfen deneğin kolunu {angle_desc} konumuna getirmesini sağlayın.")
-        input(f"Kol {angle}° açısına hazırsa DEVAM ETMEK için [ENTER] tuşuna basınız...")
+        input(f"Kol {angle}° açısına yerleştiğinde DEVAM ETMEK için [ENTER] tuşuna basınız...")
 
         for trial in range(1, trials_per_angle + 1):
-            # Rest hep ilk referanstır; diğer hareketler rastgele karıştırılır (overfitting önlemi)
             active_gestures = [g for g in CORE_GESTURES if g != "rest"]
             random.shuffle(active_gestures)
             round_gestures = ["rest"] + active_gestures
@@ -209,12 +301,14 @@ def run_guided_protocol(ser, subject, root_data_dir, trials_per_angle=2):
 
             for gesture in round_gestures:
                 current_step += 1
-                print(f"\n[{current_step}/{total_recordings}] Açı: {angle}° | Hareket: >>> {gesture.upper()} <<<")
-                print("Hazırlanın: ", end="", flush=True)
-                for c in range(3, 0, -1):
-                    print(f"{c}... ", end="", flush=True)
-                    time.sleep(1.0)
-                print("ŞİMDİ TUTUN (KAYIT BAŞLADI)!")
+                g_desc = GESTURE_DESCRIPTIONS.get(gesture, "")
+                print("\n" + "-"*70)
+                print(f"[{current_step}/{total_recordings}] Açı: {angle}° | SIRADAKİ HAREKET: >>> {gesture.upper()} <<<")
+                print(f"Talimat: {g_desc}")
+                print("-"*70)
+
+                input("» Denek hareketi yaptı/hazırsa KAYIT İÇİN [ENTER]'a basınız... ")
+                print(">>> 3 SANİYELİK KAYIT ALINIYOR (Sabit tutun)...")
 
                 ts = datetime.now().strftime("%Y%m%d_%H%M%S")
                 folder = os.path.join(root_data_dir, subject, gesture)
@@ -225,14 +319,10 @@ def run_guided_protocol(ser, subject, root_data_dir, trials_per_angle=2):
                              subject=subject, angle=angle, posture="neutral", trial_idx=trial)
 
                 if current_step < total_recordings:
-                    print("Dinlenme (Rest): ", end="", flush=True)
-                    for c in range(3, 0, -1):
-                        print(f"{c}... ", end="", flush=True)
-                        time.sleep(1.0)
-                    print("Tamam.")
+                    print("[TAMAM] Kayıt bitti. Deneğin elini gevşetmesini ve serbest bırakmasını söyleyin.")
 
     print("\n" + "="*75)
-    print(f"TEBRİKLER! Denek [{subject}] için 0°, 45° ve 90° tüm açılarda kayıtlar tamamlandı!")
+    print(f"TEBRİKLER! Denek [{subject}] için 0°, 45° ve 90° tüm açılarda kayıtlar başarıyla tamamlandı!")
     print(f"Kayıtlar: {os.path.join(root_data_dir, subject)}")
     print("="*75)
 
@@ -240,24 +330,34 @@ def main():
     args = parse_args()
     port = args.port if args.port else find_serial_port()
     baudrate = args.baud
-
-    if not port:
-        print("[HATA] ESP32 seri portu bulunamadı (/dev/ttyACM* veya /dev/ttyUSB* yok)!")
-        print("Lütfen ESP32-S3'ü USB kablosuyla bilgisayara bağlayın.")
-        sys.exit(1)
+    is_mock = args.mock
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.abspath(os.path.join(script_dir, ".."))
     data_dir = os.path.join(project_root, "data")
     os.makedirs(data_dir, exist_ok=True)
 
-    try:
-        ser = serial.Serial(port, baudrate, timeout=1.0)
-        time.sleep(1.0) # ESP32 açılış beklemesi
-    except Exception as e:
-        print(f"[HATA] Seri porta bağlanılamadı ({port}): {e}")
-        print("İpucu: 'sudo chmod 666 /dev/ttyACM0' çalıştırınız.")
-        sys.exit(1)
+    if is_mock:
+        print("\n[BİLGİ] Simülasyon (MOCK) modu aktif! Gerçekçi yapay EMG ve IMU sinyalleri üretiliyor...")
+        ser = MockSerialDevice()
+    else:
+        if not port:
+            print("[HATA] ESP32 seri portu bulunamadı (/dev/ttyACM* veya /dev/ttyUSB* yok)!")
+            print("İpucu: Donanım bağlı değilken arayüzü ve akışı görmek için '--mock' parametresini kullanabilirsiniz:")
+            print("       python3 scripts/record_live_emg.py --mock --guided\n")
+            sys.exit(1)
+
+        if serial is None:
+            print("[HATA] pyserial kütüphanesi bulunamadı! 'pip install pyserial' çalıştırınız.")
+            sys.exit(1)
+
+        try:
+            ser = serial.Serial(port, baudrate, timeout=1.0)
+            time.sleep(1.0) # ESP32 açılış beklemesi
+        except Exception as e:
+            print(f"[HATA] Seri porta bağlanılamadı ({port}): {e}")
+            print("İpucu: 'sudo chmod 666 /dev/ttyACM0' çalıştırınız.")
+            sys.exit(1)
 
     try:
         if args.guided:
@@ -285,7 +385,7 @@ def main():
             print("\n==========================================================================")
             print("  NUADA - 4x sEMG + MPU6050 EŞ ZAMANLI CANLI VERİ TOPLAMA VE KAYIT SİSTEMİ")
             print("==========================================================================")
-            print(f"Seri Port       : {port} @ {baudrate} baud")
+            print(f"Mod             : {'SİMÜLASYON (MOCK)' if is_mock else f'SERİ PORT ({port} @ {baudrate})'}")
             print(f"Denek (Subject) : {subject}")
             print(f"Kol Açısı       : {angle}° ({ANGLE_DESCRIPTIONS.get(angle, '')})")
             print(f"Hedef Hareket   : >> {gesture.upper()} << (Deneme: {trial})")

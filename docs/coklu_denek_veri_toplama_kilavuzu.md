@@ -133,21 +133,28 @@ Bu nedenle **her hareket istisnasız 3 farklı kol açısında** kaydedilmelidir
 ## 5. Çoklu Denek Veri Toplama Hızlı Checklist
 
 - [ ] **1. Cilt Temizliği:** Deneğin ön kolunu alkollü mendille silip kurutun.
-- [ ] **2. Ped & Jel:** 9 elektrot pedinin ortasına birer mercimek tanesi jel sürün (8 tanesi kas göbeklerine, 1 tanesi dirsek/ulna kemiğine ortak referans).
+- [ ] **2. Ped & Jel (Anatomik Kas Yerleşimi):** 9 elektrot pedinin ortasına birer mercimek tanesi jel sürün:
+  - **CH1 (İç Orta):** [Flexor Digitorum Superficialis (FDS)](https://www.kenhub.com/en/library/anatomy/flexor-digitorum-superficialis-muscle) - Parmak bükücü / Yumruk
+  - **CH2 (İç Başparmak Yanı):** [Flexor Pollicis Longus (FPL)](https://www.kenhub.com/en/library/anatomy/flexor-pollicis-longus-muscle) - Başparmak bükücü / Pinch
+  - **CH3 (Dış Orta):** [Extensor Digitorum (ED)](https://www.kenhub.com/en/library/anatomy/extensor-digitorum-muscle) - Parmak açıcı / Open Hand
+  - **CH4 (İç Ulnar Kenar):** [Flexor Carpi Ulnaris (FCU)](https://www.kenhub.com/en/library/anatomy/flexor-carpi-ulnaris-muscle) - Bilek bükücü / Ulnar stabilizasyon
+  - **Ortak Referans:** Dirsek arkasındaki Olecranon veya bilek kenarındaki Ulna kemiği üzerine 1 ped yapıştırın. Sadece 1. kablonun referans ucunu takın.
 - [ ] **3. Canlı Sinyal Testi (15 sn):**
   ```bash
   python3 nuada-bionic-hand-tinyml/scripts/record_live_emg.py
   ```
   Deneğe yumruk sıktırıp barların oynadığını teyit edin (`Ctrl + C` ile kapatın).
-- [ ] **4. Rehberli Oturumu Başlatın:**
+- [ ] **4. Operatör Kontrollü Rehberli Oturumu Başlatın:**
   ```bash
-  python3 nuada-bionic-hand-tinyml/scripts/record_live_emg.py --guided --subject s01
+  python3 scripts/record_live_emg.py --guided --subject s01
   ```
-  * Script sırasıyla **0°, 45° ve 90°** bloklarını açar.
-  * Her açı öncesi deneğin kolunu ayarlamanız için bekler (`Enter`'a basınca başlar).
-  * 3 sn geri sayım verir (3.. 2.. 1..), hareketi 3 sn kaydeder, 3 sn dinlendirir.
-  * Sıralamalar overfit'e karşı otomatik karıştırılır.
-  * Tüm verileri `data/s01/<hareket>/` klasörlerine ham (raw) CSV olarak kaydeder.
+  * Script sırasıyla **0°, 45° ve 90°** açı bloklarını açar.
+  * Ekrana sıradaki hareketin ismi ve talimatı gelir.
+  * Siz hareketi deneğe tarif edersiniz; denek hareketi yapıp pozisyonu koruduğunda **`[ENTER]`** tuşuna basarsınız.
+  * 3 saniye boyunca temiz, kararlı kasılma kaydedilir.
+  * Kayıt bitince denek elini serbest bırakıp dinlenir. Bir sonraki harekete hazır olduğunda tekrar `[ENTER]` ile devam edilir.
+  * Sıralamalar overfit'e karşı her turda otomatik karıştırılır.
+  * Tüm veriler doğrudan `data/s01/<hareket>/` klasörlerine ham (raw) CSV olarak kaydedilir.
 - [ ] **5. Tamamlama:** Pedleri sökün, deneğin kolunu temizleyin. Klasördeki 30 dosyayı doğrulayın (3 açı x 2 tekrar x 5 hareket).
 
 ---
@@ -179,3 +186,15 @@ timestamp_iso,elapsed_sec,esp_time_ms,emg1_raw,emg2_raw,emg3_raw,emg4_raw,emg1_v
 * `ax_raw - gz_raw`: 16-bit IMU ham değerleri (-32768 - +32767).
 * `angle_deg`: Kol açısı (0, 45 veya 90).
 * `emg_v` ve `g/dps`: Kontrol ve görselleştirme için çevrilmiş referans sütunlarıdır; model eğitiminde ham (`_raw`) sütunlar doğrudan kullanılır.
+
+---
+
+## 8. Olası Problemler ve Hızlı Çözüm Tablosu (Troubleshooting)
+
+| Belirti / Hata | Olası Neden | Çözüm |
+| :--- | :--- | :--- |
+| **`[HATA] ESP32 seri portu bulunamadı`** | 1. Kablo sadece şarj kablosudur (data hattı yoktur).<br>2. ESP32 diğer Type-C portuna takılıdır. | 1. Veri aktaran bir Type-C kablosu kullanın.<br>2. Kart üzerindeki diğer Type-C portunu deneyin.<br>3. `ls /dev/ttyACM* /dev/ttyUSB*` ile portu kontrol edin.<br>4. Donanım bağlı değilken test için `--mock` parametresi kullanın. |
+| **`Permission denied: '/dev/ttyACM0'`** | Linux kullanıcı izinleri eksiktir. | Terminalde `sudo chmod 666 /dev/ttyACM0` çalıştırın veya `sudo usermod -a -G dialout $USER` yapıp oturumu yenileyin. |
+| **ADC değeri sürekli 4095 veya 0** | 1. Ortak referans elektrodu iyi temas etmiyordur.<br>2. Sinyal pini yanlış ADC pinine takılmıştır. | 1. Ortak referans elektrodunun dirsek/ulna kemiğine jel ile iyi yapıştığından emin olun.<br>2. Sensör sinyal pinlerinin ESP32 üzerinde sırasıyla GPIO 1, 2, 3, 4'e takıldığını teyit edin. |
+| **Sinyal kasılınca hiç oynamıyor** | Elektrotlar kas göbeğine denk gelmemiştir. | Deneğe ilgili hareketi yaptırıp kolda kabaran kas göbeğini elle bulun ve elektrotları tam o hatta taşıyın. |
+| **Upload sırasında `Failed to connect`** | ESP32 otomatik boot moduna geçememiştir. | Yükleme komutunu çalıştırırken kart üzerindeki **BOOT** butonuna basılı tutun, yükleme yüzdesi başlayınca bırakın. |

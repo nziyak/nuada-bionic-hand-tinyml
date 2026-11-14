@@ -1,6 +1,10 @@
 # Nuada - Canlı EMG Veri Toplama, Donanım Kurulumu ve Kayıt Prosedürü
 ## A'dan Z'ye Eksiksiz Uygulama ve Sorun Giderme Rehberi
 
+> [!NOTE]
+> **Güncel 4 Kanallı ve Çoklu Denek Protokolü:**  
+> Bu belge, projenin ilk aşamasında yapılan tek kanallı AD8232 donanım doğrulama adımlarını içerir. Deneklerden 4 kanal EMG + MPU-6050 ile veri toplarken başvurulacak **ana ve tek operasyonel rehber:** [coklu_denek_veri_toplama_kilavuzu.md](file:///home/zia/Documents/school/graduation-project/nuada/nuada-bionic-hand-tinyml/docs/coklu_denek_veri_toplama_kilavuzu.md) belgesidir.
+
 Bu belge; **Nuada Bionic Hand** projesinde modifiye edilmiş/orijinal AD8232 analog ön uç kartı ve ESP32-S3 mikrodenetleyicisi ile **canlı kas sinyali (sEMG) okuma, terminalde görselleştirme ve CSV olarak kaydetme** süreçlerinin tüm adımlarını (yazılım altyapısı, arka planda yapılan sistem konfigürasyonları ve biyomekanik elektrot yerleşimi dahil) içerir.
 
 ---
@@ -72,17 +76,28 @@ Kablonun ucunda 3 adet çıtçıt konnektör bulunur: **Kırmızı (RA)**, **Sar
 2. Pedlerin arkasındaki şeffaf koruyucu naylonu soyup çıkarınız.
 3. Pedlerin ortasında bulunan yuvarlak iletken sensör alanına (gri/siyah daire) **küçük bir mercimek tanesi kadar iletken ultrason jeli** sıkınız ve parmağınızla hafifçe daire içine yayınız (dış beyaz yapışkan alana taşırmayınız).
 
-### B. Anatomik Yerleşim (FDS Kası - Parmak Bükme / Yumruk)
-1. **Cilt Temizliği:** Ön kolun iç yüzeyini alkollü mendil veya kolonya ile silip kurulayınız (cilt yağını ve empedansı düşürür).
-2. **Kırmızı Elektrot (RA - Pozitif Giriş):** 
-   * Dirsek kıvrımından aşağıya doğru yaklaşık **5 cm** ininiz.
-   * Kolunuzun iç tarafında yumruk sıkınca şişen kasın (**Flexor Digitorum Superficialis - FDS**) tam üzerine yapıştırınız.
-3. **Sarı Elektrot (LA - Negatif Giriş):** 
-   * Kırmızı elektrodun **2 cm (20 mm - SENIAM standardı) hemen altına**, kas liflerinin doğrultusuna paralel olacak şekilde yapıştırınız.
-4. **Yeşil Elektrot (RL - Referans / Toprak):** 
-   * **Dirseğinizin arkasındaki sivri kemik çıkıntısına (Olecranon)** yapıştırınız.
-   * *Görevi:* Vücudunuzun havadaki 50 Hz şebeke gürültüsünü toprağa aktarmak ve amfinin sanal zeminini sabitlemektir. Yeşil elektrot takılmazsa sinyal tavana yapışır.
-5. Kablonun 3.5 mm jakını AD8232 kartındaki siyah jaka takınız.
+### B. Anatomik Yerleşim ve Kas Hedefleri (Kenhub Referansları)
+1. **Cilt Temizliği:** Ön kolun iç ve dış yüzeyini alkollü mendil veya kolonya ile silip kurulayınız (cilt yağını ve empedansı düşürür).
+2. **Elektrot Aralığı:** İki aktif elektrot (Kırmızı ve Sarı) kas liflerine paralel ve merkezden merkeze **2 cm (20 mm - SENIAM standardı)** aralıkla yapıştırılır.
+
+Dört kanal için hedeflenen kas grupları ve detaylı anatomik atlas bağlantıları:
+
+* **CH1 - [Flexor Digitorum Superficialis (FDS)](https://www.kenhub.com/en/library/anatomy/flexor-digitorum-superficialis-muscle):**
+  * **İşlev:** Parmakları bükme (fleksiyon), yumruk ve pinch kavrama.
+  * **Yerleşim:** Ön kol iç yüzeyinin tam orta göbeği (dirsek kıvrımından ~5 cm aşağıda).
+* **CH2 - [Flexor Pollicis Longus (FPL)](https://www.kenhub.com/en/library/anatomy/flexor-pollicis-longus-muscle):**
+  * **İşlev:** Başparmağı bükme ve kavrama hareketi.
+  * **Yerleşim:** Ön kol iç yüzeyinde, radius kemiği tarafında (başparmak hizasına yakın dış kenar).
+* **CH3 - [Extensor Digitorum (ED)](https://www.kenhub.com/en/library/anatomy/extensor-digitorum-muscle):**
+  * **İşlev:** Parmakları açma (ekstansiyon) ve eli yayma (Open Hand).
+  * **Yerleşim:** Ön kol dış (el sırtı) yüzeyinin üst orta kısmı.
+* **CH4 - [Flexor Carpi Ulnaris (FCU)](https://www.kenhub.com/en/library/anatomy/flexor-carpi-ulnaris-muscle):**
+  * **İşlev:** El bileğini bükme ve serçe parmağı tarafına yönlendirme (ulnar deviasyon / bilek stabilizasyonu).
+  * **Yerleşim:** Ön kol iç yüzeyinde, serçe parmağı tarafındaki kenar boyunca (ulna kemiği hattı).
+
+3. **Ortak Referans Elektrodu (RL - Toprak):**
+   * **Dirseğinizin arkasındaki sivri kemik çıkıntısına (Olecranon)** veya bilek kenarındaki **Ulna kemiği çıkıntısına** yapıştırınız.
+   * *Görevi:* Vücudun 50 Hz şebeke gürültüsünü toprağa aktarmak ve amfilerin sanal zeminini sabitlemektir. Sadece 1. sensörün yeşil kablosu bu pede takılır.
 
 ---
 
