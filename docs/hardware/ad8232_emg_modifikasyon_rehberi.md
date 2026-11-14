@@ -9,7 +9,7 @@ Bu belge, **Nuada Bionic Hand** projesi kapsamında kullanılan Analog Devices *
 Kart üzerindeki elemanların konumlarının, değerlerinin ve devre bağlantılarının doğruluğu 2 temel resmi kaynağa dayanır:
 
 ### Kaynak 1: Analog Devices AD8232 Resmi Veri Sayfası (Datasheet Rev. A)
-* **Doküman:** Analog Devices AD8232 Technical Documentation ([ad8232_datasheet.pdf](file:///home/zia/Documents/school/graduation-project/nuada/nuada-bionic-hand-tinyml/docs/datasheets/ad8232_datasheet.pdf))
+* **Doküman:** Analog Devices AD8232 Technical Documentation ([ad8232_datasheet.pdf](file:///home/zia/Documents/school/graduation-project/nuada/nuada-bionic-hand-tinyml/docs/hardware/datasheets/ad8232_datasheet.pdf))
 * **İlgili Bölümler:**
   * **Sayfa 21 - 22 (High-Pass Filtering):** Şekil 56 (*Alternative Two-Pole High-Pass Filter*).  
     Formül: `f_HP = 10 / (2 * π * sqrt(R1 * C1 * R2 * C2))`  
@@ -53,18 +53,18 @@ Kartın üzerindeki elemanların birebir fiziksel yerleşimi ve lehimleme hedefl
 ### A. Gerçek Fiziksel Kart Üzerinde Parça Konumları (Fotoğraf Rehberi)
 Aşağıdaki görselde, elinizde tuttuğunuz kırmızı AD8232 kartının yüksek çözünürlüklü makro fotoğrafı üzerinde değiştirilecek parçalar doğrudan işaretlenmiştir:
 
-![AD8232 Gerçek Kart Üzerinde Parça Haritası](./ad8232_gercek_kart_haritasi.png)
+![AD8232 Gerçek Kart Üzerinde Parça Haritası](../images/ad8232_gercek_kart_haritasi.png)
 
-*Gerçek kart fotoğrafını tam ekranda açmak için:* **[📸 ad8232_gercek_kart_haritasi.png Görselini Aç (Tıklayın)](./ad8232_gercek_kart_haritasi.png)**
+*Gerçek kart fotoğrafını tam ekranda açmak için:* **[📸 ad8232_gercek_kart_haritasi.png Görselini Aç (Tıklayın)](../images/ad8232_gercek_kart_haritasi.png)**
 
 ---
 
 ### B. CAD Baskı Devre ve Yol Şeması (Eagle PCB Haritası)
 Yolların ve komşu komponentlerin mikro koordinatlarını gösteren teknik CAD yerleşimi:
 
-![AD8232 CAD Modifikasyon Haritası](./ad8232_emg_mod_guide.png)
+![AD8232 CAD Modifikasyon Haritası](../images/ad8232_emg_mod_guide.png)
 
-*CAD haritasını tam ekranda açmak için:* **[🖼️ ad8232_emg_mod_guide.png Görselini Aç (Tıklayın)](./ad8232_emg_mod_guide.png)**
+*CAD haritasını tam ekranda açmak için:* **[🖼️ ad8232_emg_mod_guide.png Görselini Aç (Tıklayın)](../images/ad8232_emg_mod_guide.png)**
 
 *(Not: Markdown dosyasını IDE içinde önizleme modunda (`Ctrl + Shift + V` / Markdown Preview) açtığınızda yukarıdaki haritalar renkli ve yüksek çözünürlüklü olarak doğrudan belgenin içinde görüntülenecektir).*
 

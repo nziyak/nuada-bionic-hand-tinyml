@@ -1,7 +1,7 @@
 # Nuada: Bionic Hand Movement Estimation via TinyML
 
 [![Project Status: Active Development](https://img.shields.io/badge/Project%20Status-Active%20Development-blue.svg)](#)
-[![Hardware: ESP32-S3](https://img.shields.io/badge/Hardware-ESP32--S3%20Xtensa%20LX7-red.svg)](docs/datasheets/esp32-s3_datasheet_en.pdf)
+[![Hardware: ESP32-S3](https://img.shields.io/badge/Hardware-ESP32--S3%20Xtensa%20LX7-red.svg)](docs/hardware/datasheets/esp32-s3_datasheet_en.pdf)
 [![ML: TinyML / TFLite Micro](https://img.shields.io/badge/ML-TinyML%20%7C%20Edge%20Impulse-green.svg)](#)
 [![Sensors: sEMG + IMU](https://img.shields.io/badge/Sensors-sEMG%20(4--Ch)%20%2B%20MPU--6050-orange.svg)](#)
 
@@ -125,25 +125,33 @@ To rigorously evaluate embedded efficiency and classification accuracy, both res
 ```
 nuada-bionic-hand-tinyml/
 ├── docs/
-│   ├── anatomy_and_signal_acquisition.md   # Comprehensive biomechanics, SENIAM protocols & hardware guide
-│   ├── hardware_comparison.md              # Microcontroller and platform trade-off evaluation
-│   └── datasheets/                         # Archived manufacturer datasheets & technical summaries
-│       ├── datasheets_summary.md           # Bus timing calculations, electrical ranges, and pinouts
-│       ├── esp32-s3_datasheet_en.pdf       # Espressif ESP32-S3 Official Datasheet
-│       ├── ad8232_datasheet.pdf            # Analog Devices AD8232 Front-End Datasheet
-│       ├── mcp3008_datasheet.pdf           # Microchip MCP3008 10-Bit ADC Datasheet
-│       ├── mpu6050_datasheet.pdf           # InvenSense MPU-6050 6-Axis MotionTracking Datasheet
-│       └── ads1115_datasheet.pdf           # Texas Instruments ADS1115 16-Bit ADC Datasheet
-├── images/                                 # Scientific illustrations, anatomical diagrams & electrode maps
-├── .gitignore                              # Git exclusion rules for embedded and Python environments
+│   ├── protocols/                          # Data collection protocols, checklists & biomechanics
+│   │   ├── coklu_denek_veri_toplama_kilavuzu.md # Master 4-Ch EMG + IMU multi-angle acquisition manual
+│   │   ├── veri_toplama_proseduru.md            # Hardware bringup & sensor validation procedure
+│   │   └── anatomy_and_signal_acquisition.md    # Biomechanics, SENIAM protocols & anatomy map
+│   ├── hardware/                           # Schematics, BOM, modifications & datasheets
+│   │   ├── hardware_specification_and_bom.md    # Official BOM, power architecture & pinout
+│   │   ├── hardware_comparison.md               # MCU and ADC architecture trade-off analysis
+│   │   ├── satin_alma_listesi.md                # Procurement and budget breakdown
+│   │   ├── ad8232_emg_modifikasyon_rehberi.md   # Analog front-end Sallen-Key LPF mod guide
+│   │   └── datasheets/                          # Manufacturer datasheets & bus timing calculations
+│   ├── images/                             # Schematics, board layouts & physical hardware photos
+│   ├── presentations/                      # Official project proposal & final presentations
+│   └── archive/                            # Historical transcripts & initial scratch lab notes
+├── firmware/                               # ESP32-S3 C++ firmware (PlatformIO)
+├── scripts/                                # Python multi-angle acquisition, visualizer & tools
+├── Simulation/                             # Three.js + TypeScript 3D virtual bionic hand digital-twin
+├── data/                                   # Local dataset records (raw 100 Hz CSVs)
 └── README.md                               # Primary project portal and documentation
 ```
 
 ---
 
 ## 📚 Technical Documentation Links
-* [Final Hardware Specification, BOM & Wiring Architecture](docs/hardware_specification_and_bom.md)
-* [Biomechanics, Anatomy & Signal Acquisition Manual](docs/anatomy_and_signal_acquisition.md)
-* [Datasheets, Electrical Specifications & Bus Timing Report](docs/datasheets/datasheets_summary.md)
-* [Embedded MCU Comparative Study](docs/hardware_comparison.md)
+* [Multi-Subject Multi-Angle Data Collection Guide (Master Protocol)](docs/protocols/coklu_denek_veri_toplama_kilavuzu.md)
+* [Final Hardware Specification, BOM & Wiring Architecture](docs/hardware/hardware_specification_and_bom.md)
+* [Biomechanics, Anatomy & Signal Acquisition Manual](docs/protocols/anatomy_and_signal_acquisition.md)
+* [AD8232 Analog Front-End Modification Guide](docs/hardware/ad8232_emg_modifikasyon_rehberi.md)
+* [Datasheets, Electrical Specifications & Bus Timing Report](docs/hardware/datasheets/datasheets_summary.md)
+* [Embedded MCU Comparative Study](docs/hardware/hardware_comparison.md)
 

@@ -3,8 +3,8 @@ import re
 import os
 
 input_path = '/home/zia/.gemini/antigravity-ide/brain/b64519ea-ca5d-49bd-90ef-2472ccc65f19/.system_generated/logs/transcript_full.jsonl'
-output_md = 'docs/nuada_proje_sohbet_gecmisi.md'
-output_html = 'docs/nuada_proje_sohbet_gecmisi.html'
+output_md = 'docs/archive/nuada_proje_sohbet_gecmisi.md'
+output_html = 'docs/archive/nuada_proje_sohbet_gecmisi.html'
 
 def clean_user_text(raw_text):
     # Extract content between <USER_REQUEST> and </USER_REQUEST>

@@ -5,9 +5,11 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 
-TEMPLATE_PATH = '/home/zia/Documents/school/graduation-project/nuada/docs/presentations/GTU_graduate_project_presentation_template.pptx'
-OUTPUT_PATH_1 = '/home/zia/Documents/school/graduation-project/nuada/docs/presentations/Nuada_Bionic_Hand_Project_Proposal_Presentation.pptx'
-OUTPUT_PATH_2 = 'docs/presentations/Nuada_Bionic_Hand_Project_Proposal_Presentation.pptx'
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
+TEMPLATE_PATH = os.path.join(PROJECT_ROOT, 'docs', 'presentations', 'GTU_graduate_project_presentation_template.pptx')
+OUTPUT_PATH_1 = os.path.join(PROJECT_ROOT, 'docs', 'presentations', 'Nuada_Bionic_Hand_Project_Proposal_Presentation.pptx')
+OUTPUT_PATH_2 = os.path.join(PROJECT_ROOT, '..', 'docs', 'presentations', 'Nuada_Bionic_Hand_Project_Proposal_Presentation.pptx')
 
 prs = pptx.Presentation(TEMPLATE_PATH)
 
@@ -210,7 +212,7 @@ for sh in s5.shapes:
 s6 = prs.slides[5]
 set_footer(s6, 6)
 remove_all_pictures(s6)
-s6.shapes.add_picture('docs/ad8232_gercek_kart_haritasi.png', Inches(0.3), Inches(1.45), width=Inches(7.4), height=Inches(5.35))
+s6.shapes.add_picture('docs/images/ad8232_gercek_kart_haritasi.png', Inches(0.3), Inches(1.45), width=Inches(7.4), height=Inches(5.35))
 
 for sh in s6.shapes:
     if 'Unvan' in sh.name or 'Title' in sh.name:
@@ -246,7 +248,7 @@ for sh in s6.shapes:
 s7 = prs.slides[6]
 set_footer(s7, 7)
 remove_all_pictures(s7)
-s7.shapes.add_picture('docs/ad8232_emg_mod_guide.png', Inches(0.3), Inches(1.45), width=Inches(7.4), height=Inches(5.35))
+s7.shapes.add_picture('docs/images/ad8232_emg_mod_guide.png', Inches(0.3), Inches(1.45), width=Inches(7.4), height=Inches(5.35))
 
 for sh in s7.shapes:
     if 'Title' in sh.name or 'Unvan' in sh.name:

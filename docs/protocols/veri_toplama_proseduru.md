@@ -3,7 +3,7 @@
 
 > [!NOTE]
 > **Güncel 4 Kanallı ve Çoklu Denek Protokolü:**  
-> Bu belge, projenin ilk aşamasında yapılan tek kanallı AD8232 donanım doğrulama adımlarını içerir. Deneklerden 4 kanal EMG + MPU-6050 ile veri toplarken başvurulacak **ana ve tek operasyonel rehber:** [coklu_denek_veri_toplama_kilavuzu.md](file:///home/zia/Documents/school/graduation-project/nuada/nuada-bionic-hand-tinyml/docs/coklu_denek_veri_toplama_kilavuzu.md) belgesidir.
+> Bu belge, projenin ilk aşamasında yapılan tek kanallı AD8232 donanım doğrulama adımlarını içerir. Deneklerden 4 kanal EMG + MPU-6050 ile veri toplarken başvurulacak **ana ve tek operasyonel rehber:** [coklu_denek_veri_toplama_kilavuzu.md](./coklu_denek_veri_toplama_kilavuzu.md) belgesidir.
 
 Bu belge; **Nuada Bionic Hand** projesinde modifiye edilmiş/orijinal AD8232 analog ön uç kartı ve ESP32-S3 mikrodenetleyicisi ile **canlı kas sinyali (sEMG) okuma, terminalde görselleştirme ve CSV olarak kaydetme** süreçlerinin tüm adımlarını (yazılım altyapısı, arka planda yapılan sistem konfigürasyonları ve biyomekanik elektrot yerleşimi dahil) içerir.
 
