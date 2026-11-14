@@ -36,3 +36,7 @@ venv.bak/
 *.log
 *.tmp
 *.bak
+
+# Dataset files (large CSVs)
+data/*.csv
+data/**/*.csv
