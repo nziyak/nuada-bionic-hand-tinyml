@@ -134,6 +134,7 @@ nuada-bionic-hand-tinyml/
 │   │   ├── hardware_comparison.md               # MCU and ADC architecture trade-off analysis
 │   │   ├── satin_alma_listesi.md                # Procurement and budget breakdown
 │   │   ├── ad8232_emg_modifikasyon_rehberi.md   # Analog front-end Sallen-Key LPF mod guide
+│   │   ├── emg_dagitim_karti_pertinaks_plani.md # Perfboard 4-Ch EMG & power distribution hub plan
 │   │   └── datasheets/                          # Manufacturer datasheets & bus timing calculations
 │   ├── images/                             # Schematics, board layouts & physical hardware photos
 │   ├── presentations/                      # Official project proposal & final presentations
@@ -150,6 +151,7 @@ nuada-bionic-hand-tinyml/
 ## 📚 Technical Documentation Links
 * [Multi-Subject Multi-Angle Data Collection Guide (Master Protocol)](docs/protocols/coklu_denek_veri_toplama_kilavuzu.md)
 * [Final Hardware Specification, BOM & Wiring Architecture](docs/hardware/hardware_specification_and_bom.md)
+* [4-Channel sEMG & Power Distribution Hub (Perfboard Plan)](docs/hardware/emg_dagitim_karti_pertinaks_plani.md)
 * [Biomechanics, Anatomy & Signal Acquisition Manual](docs/protocols/anatomy_and_signal_acquisition.md)
 * [AD8232 Analog Front-End Modification Guide](docs/hardware/ad8232_emg_modifikasyon_rehberi.md)
 * [Datasheets, Electrical Specifications & Bus Timing Report](docs/hardware/datasheets/datasheets_summary.md)
