@@ -1,0 +1,104 @@
+low pass mod varsayımlarımızın doğruluğundan emin olmak için önce sadece bi kartı modifiye ettik ve şu anda onu deniyorum.
+
+en başta iki elektortta eski jel vardı birinde hiç yoktu.
+eski jellilerde üstüne yeni jel koydum diğerinde de jel koydum mercimek tanesi kadar.
+
+önceki evrimle testimizdeki gibi yerleştirdim elektrotları.
+
+jak takılıyken 4095te kilitlendiler. ra rl ve la'yı kısa devre yaptığımda düştü çıktı değeri gerçekten.
+
+modifikasyonun doğru olduğunu doğruladık yani. kısa devre falan yok.
+
+neden hep max yani 4095 okunduğunu anlamaya çalıştım. 
+
+biyolojik sensörlerin normal sensörlerden bir önemli farkını öğrendim.
+
+normal sensörler veri okunmadığında 0 veriyor ama biyolojik sensörler okunamadığında empedans çok yüksek okunamıyor
+uyarısı vermek için de 4095 veriyor voltajı max veriyor çıktıya.
+
+sebebini anlamaya çalışırken eski jellerin belki de iletkenliğini kaybettiğini düşündüm ve onları tamamen söktüm sonra tüm elektrotlara
+jelleri tazeledim. sonra cidden doygunluk kesildi.
+
+yani artık 4095te sabit değildi. başka değerlere de gidiyordu ama kolumu sıksam da sıkmasam da azalıp artıyordu.
+
+50 hzlik şebeke gürültüsünün sinüs dalgasına tekabül ettiğini anladım bu salınımın.
+
+eskiden yani modifiyesizken 40 hz idi üst filtre ve bu sayede 50 hzlik şebeke gürültüsü hiç dahil olmuyordu.
+
+biz 410 hzye çıkardık modifikasyonla ve bu yüzden artık dahil oluyor ve tek başına çok fazla voltaj ürettiğinden kas kasılması okunamıyor bile.
+ve önce şebeke gürültüsü oldğunu anlamadan önce random gibi gelmişti ama öyle gözükmesinin sebebi 50 hzlik dalganın periyodunun 20 ms olması ve
+terminale 60 msde bir çıktı basmamız. 3 periyotta bir oluyor ve bu yüzden değişiyor değerler.
+
+Sallen-Key Filtre Teorisi ve Kararlılık Hesabı:
+
+AD8232'nin çıkışındaki filtre 2 kutuplu aktif bir Sallen-Key alçak geçiren filtre devresi.
+Bu devrede op-amp'ın kapalı çevrim kazancı R8 ve R9 dirençleriyle belirleniyor:
+Gain (K) = 1 + (R9 / R8) = 1 + (1 MΩ / 100 kΩ) = 11
+
+Bu filtrenin kararlılığını devrenin sönüm katsayısı (damping) belirliyor.
+Transfer fonksiyonundan gelen sönüm katsayısı formülü:
+b = R * [ 2 * C3 - (K - 1) * C1 ]
+
+K = 11 olduğu için (K - 1) = 10 oluyor. Yani formül direkt şuna dönüşüyor:
+b = R * [ 2 * C3 - 10 * C1 ]
+
+Devrenin düzgün bir filtre gibi çalışması için bu b değerinin kesinlikle pozitif olması şart.
+Eğer b sıfır veya negatif çıkarsa devrenin kutupları sağ yarı düzleme geçiyor ve devre filtre olmayı bırakıp kendi kendine elektrik üreten bir osilatöre (kare dalga jeneratörüne) dönüşüyor.
+
+Hesapları karşılaştırırsak:
+
+1. Orijinal Fabrika Çıkışı (40 Hz EKG):
+C3 = 10 nF, C1 = 1.5 nF
+2 * C3 = 20 nF
+10 * C1 = 15 nF
+Fark: 20 nF - 15 nF = +5 nF (Pozitif! Devre kararlı, asla osilasyona girmiyor, 50 Hz'i de analogda kesiyor).
+
+2. Bizim taktığımız değerler (220 pF) vs 150 pF:
+Bana ilk başta 150 pF veya 220 pF demiştin. Dükkanda 150 pF bulamadığımız için 220 pF de olur dediğinden onu aldık ve taktık.
+Hesaplayınca ortaya çıkan durum şu:
+Eğer 150 pF bulup taksaydık:
+C3 = 1.0 nF, C1 = 150 pF
+2 * C3 = 2.0 nF
+10 * C1 = 1.5 nF
+Fark: 2.0 - 1.5 = +0.5 nF çıkacaktı! Yani pozitif kalacaktı ve devre eksiye düşmeyecekti.
+Ama 220 pF takınca:
+2 * C3 = 2.0 nF
+10 * C1 = 2.2 nF
+Fark: 2.0 - 2.2 = -0.2 nF oldu ve eksiye düştü!
+Yani kritik sınır tam 200 pF'mış. 150 pF devreyi kararlı tutuyorken 220 pF devreyi osilatöre çevirmiş.
+
+Hocalara Neden Bu Değerleri Seçtiğimizi Nasıl Açarız:
+1. Datasheet'teki basitleştirilmiş formül: AD8232 datasheet'inde (Rev. A, sayfa 23) Sallen-Key filtre kesim frekansı formülü sadece fc = 1 / (2 * pi * sqrt(R1 * R2 * C1 * C2)) olarak veriliyor. Bu formül kesim frekansını hesaplatıyor ama op-amp kazancı K=11 iken devrenin kararlılığı için gereken C3 > 5 * C1 sönüm kuralını belirtmiyor. Çip zaten fabrikasyon olarak EKG için seçilen 10 nF ve 1.5 nF ile kararlı çalıştığından üretici harici modifikasyon uyarısı koymamış.
+2. Açık kaynak projeler ve Theremino örneği: 
+   AD8232'yi EMG için modifiye eden açık kaynaklı rehberlerin başında Theremino geliyor. Sitedeki "Modificare il modulo AD8232 per EMG" başlığı altında paylaşılan resmi kılavuz PDF'inde (theremino.com/wp-content/uploads/files/AD8232_for_EMG_ENG.pdf, Sayfa 2 ve 3) C3 = 1 nF ve C1 = 220 pF değerleri doğrudan tablo halinde veriliyor.
+   Ama orada çok kritik bir donanım detayı var: Kılavuzun 2. sayfasındaki 3. maddede ve 4. sayfadaki PCB şemasında R9 kazanç direncinin (1 MΩ) de 470 kΩ'a düşürülmesi gerektiği söyleniyor.
+   Çünkü R9 = 470 kΩ olunca devrenin kazancı K = 1 + (470 kΩ / 100 kΩ) = 5.7'ye düşüyor.
+   Bu durumda formüle koyarsak: 2 * C3 - (5.7 - 1) * C1 = 2(1.0 nF) - 4.7(0.22 nF) = 2.0 - 1.03 = +0.97 nF > 0 çıkıyor! Yani direnci de 470 kΩ yaparsan 220 pF eksiye düşmüyor, devre kararlı kalıyor.
+   Ama internetteki DIY forumlarında ve özetlerde SMD direnç sökmek zor geldiği için herkes sadece C3 ve C1'i değiştirip R9'u (1 MΩ, K=11) bıraktı. K=11 kalıp 220 pF takılınca da devre 200 pF sınırını aşıp eksiye düştü.
+3. 150 pF bulamayınca 220 pF kullandık; kesim frekansı yine ~400 Hz civarı kalır diye düşündük ama R9'u ellemediğimiz için kritik sınırın 200 pF olduğunu ve devreyi osilatöre çevireceğini hesaba katmamıştık.
+4. Hocalara da "önce varsayımlarımızın doğruluğunu görmek için tek bir kartta prototip denemesi yaptık, bu sayede hem Sallen-Key filtrenin yüksek kazançtaki kararlılık sınırını gördük hem de kalan kartları koruduk" diye anlatabiliriz.
+
+Doğru kapasitörleri taksaydık (mesela 150 pF) 50 Hz'i yazılımla filtreleyemez miydik?
+- 150 pF taksaydık donanım kendi kendine osilasyona girmezdi, filtre düzgün çalışırdı.
+- 50 Hz de yazılımla (ESP32 veya Python'da notch filtre ile) filtrelenebilirdi.
+- Ama burada kritik bir donanım sorunu var: Masaüstü priz döngüsü ve clipping (kırpılma).
+  SparkFun AD8232 Hookup Guide'da (learn.sparkfun.com/tutorials/ad8232-heart-rate-monitor-hookup-guide) ve Arduino forumlarında (forum.arduino.cc) biyo-sensörlerde Sistemi prize takılı bilgisayarla değil, tamamen pille/laptopun kendi bataryasıyla çalıştırmak gerekiyor.
+  Çünkü prize takılı PC'lerin güç kaynakları USB hattı ve insan vücudu üzerinden devasa bir 50 Hz toprak döngüsü (ground loop) oluşturuyor.
+  Pille çalışan izole sistemlerde bu 50 Hz küçük kaldığı için yazılımsal notch filtre ile temizlenebiliyor.
+  Ama bizim test ortamımızdaki gibi prize takılı masaüstü sistemlerde 50 Hz o kadar büyük genlikle giriyor ki op-amp çıkışında 0V veya 3.3V tavanına çarpıp sinyali kırpıyor (clipping). Sinyal analogda kırpılıp düz çizgiye dönüştüğü an hiçbir yazılımsal filtre o kaybolan veriyi kurtaramaz.
+- Ayrıca el hareketlerini sınıflandırmak için bize kas liflerinin 400 Hz'lik titreşimi gerekmiyor; kasın ne zaman ve ne kadar kasıldığını gösteren aktivasyon zarfı (linear envelope: 2 - 35 Hz) yetiyor.
+- Yani 150 pF takıp pille çalışma ve yazılımsal filtre kasmak yerine, kartı fabrikasyon 40 Hz halinde bırakmak hem 50 Hz'i donanımda baştan kesiyor, hem clipping'i engelliyor, hem de envelope'u zaten veriyor.
+
+Buradan ne anlamamız gerekiyor:
+- Modifikasyonla C1 ve C3'ü küçültüp 410 Hz'e çıkmaya çalışırken devrenin kararlılık marjını sıfırın altına itmişiz.
+- Yani devre şu an kas sinyali okumaya çalışırken hem 50 Hz şebeke gürültüsünü içeri alıyor, hem de op-amp kararsızlık sınırında geziyor.
+- Bu yüzden gevşekken de sıktığımda da sinyal 0 ile 4095 arasında benzer şekilde salınıyor.
+- Bu durum bir çöp olma değil; tez ve rapor için tam bir "aktif filtre kararlılık sınırı analizi" bulgusu.
+- Orijinal kartlar geldiğinde onları hiç modifiye etmeden kullanacağız çünkü 40 Hz filtresi bu kararlılığı donanımsal olarak koruyor ve 50 Hz gürültüsünü baştan kesiyor. 
+- Kas aktivasyon zarfı (envelope) da zaten 40 Hz'in altında olduğu için el hareketlerini sınıflandırmamızda hiçbir eksiklik yaratmayacak. Modifiye ettiğimiz karta da orijinal değerde kapasitör takacağız yeniden.
+
+envelope şu demekmiş:
+şimdi normalde kas sıkıldığında kas lifleri farklı frekanslarda kasılıyor. bu raw sEMG verisi ve 400 Hzye kadar çıkabiliyor. ama aslında 400 hzye kadar takip etmeye ihtiyacımız yok. ihtiyacımız olan şey kasın ne kadar kuvvetli kasıldığı ve ne zaman gevşediği. bu da aslında zaman domaininde kas kasılma şiddetiyle alakalı bir şey.
+bu sinyalin tüm uçlarını saran yumuşak eğriye linear envelope ya da aktivasyon zarfı deniyormuş. kas kasılma envelopeu 2-35 hz arasındaymış zaten.
+biz yine de modifiye etmek istemiştik. çünkü ilk sebebimiz teorik standartlara uymaktı. seniam gibi uluslararası biyomekanik standartlarında sEMG aralığı 10-450 hz. biz projeyi buna uydurmak istedik. 
+ikinci sebebimiz de ham frekans spektrumunu almaktı. 400 hzye kadar olan ham sinyalleri alabilseydik zaman domainindeki genliğin yanında frekans domainindeki öznitelikleri de alabilirdik. mean freq, median freq gibi yorgunlukla ilgili featureları mesela. ama el hareketlerini sınıflandırmak için envelope fazlasıyla yeterli. 

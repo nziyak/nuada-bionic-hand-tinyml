@@ -6,6 +6,7 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+<<<<<<< HEAD
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 
 TEMPLATE_PATH = os.path.join(PROJECT_ROOT, 'docs', 'presentations', 'GTU_graduate_project_presentation_template.pptx')
@@ -14,6 +15,12 @@ OUTPUT_PATH = os.path.join(PROJECT_ROOT, 'docs', 'presentations', 'Nuada_Bionic_
 if not os.path.exists(TEMPLATE_PATH):
     print(f"Error: Template not found at {TEMPLATE_PATH}")
     sys.exit(1)
+=======
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
+TEMPLATE_PATH = os.path.join(PROJECT_ROOT, 'docs', 'presentations', 'GTU_graduate_project_presentation_template.pptx')
+OUTPUT_PATH_1 = os.path.join(PROJECT_ROOT, 'docs', 'presentations', 'Nuada_Bionic_Hand_Project_Proposal_Presentation.pptx')
+OUTPUT_PATH_2 = os.path.join(PROJECT_ROOT, '..', 'docs', 'presentations', 'Nuada_Bionic_Hand_Project_Proposal_Presentation.pptx')
+>>>>>>> 5775d284e2f9bdc0a5f85d5fdff7a6f66cceb6d3
 
 prs = pptx.Presentation(TEMPLATE_PATH)
 
@@ -257,6 +264,12 @@ for sh in s5.shapes:
 # ==========================================================
 s6 = prs.slides[5]
 set_footer(s6, 6)
+<<<<<<< HEAD
+=======
+remove_all_pictures(s6)
+s6.shapes.add_picture('docs/images/ad8232_gercek_kart_haritasi.png', Inches(0.3), Inches(1.45), width=Inches(7.4), height=Inches(5.35))
+
+>>>>>>> 5775d284e2f9bdc0a5f85d5fdff7a6f66cceb6d3
 for sh in s6.shapes:
     if 'Title' in sh.name or 'Unvan' in sh.name:
         sh.text_frame.text = 'Cost Optimization: Economic Feasibility & Sensor Strategy'
@@ -289,9 +302,13 @@ for sh in s6.shapes:
 s7 = prs.slides[6]
 set_footer(s7, 7)
 remove_all_pictures(s7)
+<<<<<<< HEAD
 img_s7 = os.path.join(PROJECT_ROOT, 'docs', 'ad8232_gercek_kart_haritasi.png')
 if os.path.exists(img_s7):
     s7.shapes.add_picture(img_s7, Inches(0.3), Inches(1.45), width=Inches(7.4), height=Inches(5.35))
+=======
+s7.shapes.add_picture('docs/images/ad8232_emg_mod_guide.png', Inches(0.3), Inches(1.45), width=Inches(7.4), height=Inches(5.35))
+>>>>>>> 5775d284e2f9bdc0a5f85d5fdff7a6f66cceb6d3
 
 for sh in s7.shapes:
     if 'Unvan' in sh.name or 'Title' in sh.name:
