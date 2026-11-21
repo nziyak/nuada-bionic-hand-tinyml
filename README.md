@@ -42,7 +42,7 @@ graph TD
     end
 
     subgraph AFE_STAGE ["2. Analog Front-End (AFE)"]
-        AMP["4x Biopotential Amplifiers (Modified AD8232 / INA)"]
+        AMP["4x Ready-Made sEMG Sensor Modules (±5V Dual Supply)"]
         FILTER["Bandpass Filter (20 Hz - 450 Hz) + Notch Filter (50 Hz)"]
     end
 
@@ -133,7 +133,7 @@ nuada-bionic-hand-tinyml/
 │   │   ├── hardware_specification_and_bom.md    # Official BOM, power architecture & pinout
 │   │   ├── hardware_comparison.md               # MCU and ADC architecture trade-off analysis
 │   │   ├── satin_alma_listesi.md                # Procurement and budget breakdown
-│   │   ├── ad8232_emg_modifikasyon_rehberi.md   # Analog front-end Sallen-Key LPF mod guide
+│   │   ├── ad8232_emg_modifikasyon_rehberi.md   # (Cancelled) AD8232 Sallen-Key LPF mod guide, reference only
 │   │   ├── emg_dagitim_karti_pertinaks_plani.md # Perfboard 4-Ch EMG & power distribution hub plan
 │   │   └── datasheets/                          # Manufacturer datasheets & bus timing calculations
 │   ├── images/                             # Schematics, board layouts & physical hardware photos
@@ -153,7 +153,7 @@ nuada-bionic-hand-tinyml/
 * [Final Hardware Specification, BOM & Wiring Architecture](docs/hardware/hardware_specification_and_bom.md)
 * [4-Channel sEMG & Power Distribution Hub (Perfboard Plan)](docs/hardware/emg_dagitim_karti_pertinaks_plani.md)
 * [Biomechanics, Anatomy & Signal Acquisition Manual](docs/protocols/anatomy_and_signal_acquisition.md)
-* [AD8232 Analog Front-End Modification Guide](docs/hardware/ad8232_emg_modifikasyon_rehberi.md)
+* [AD8232 Analog Front-End Modification Guide (Cancelled – reference only)](docs/hardware/ad8232_emg_modifikasyon_rehberi.md)
 * [Datasheets, Electrical Specifications & Bus Timing Report](docs/hardware/datasheets/datasheets_summary.md)
 * [Embedded MCU Comparative Study](docs/hardware/hardware_comparison.md)
 

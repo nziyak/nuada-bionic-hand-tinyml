@@ -125,6 +125,8 @@ Focusing on a **3-Finger Configuration (Thumb, Index, and Middle)** captures **8
 
 ## 5. Converting the AD8232 ECG Front-End for sEMG Operation
 
+> **Status: Cancelled.** The project now uses ready-made sEMG sensor modules (dual ±Vs supply) instead of modified AD8232 boards. This section is kept for reference only. See the [4-Channel sEMG & Power Distribution Hub](../hardware/emg_dagitim_karti_pertinaks_plani.md) for the current wiring.
+
 The low-cost **AD8232** integrated front-end is factory-configured for electrocardiography (ECG) with a passband of **0.5 Hz – 40 Hz**. Because surface EMG requires **20 Hz – 450 Hz**, the passive SMD filter network must be adapted.
 
 ```

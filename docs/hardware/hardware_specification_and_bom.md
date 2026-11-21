@@ -3,6 +3,8 @@
 
 This document establishes the finalized, production-ready embedded hardware blueprint for the **Nuada** bionic prosthesis system. Based on faculty advisory guidance, the architecture is engineered to be **100% off-the-shelf, modular, solderless, and dry-electrode native**, eliminating custom analog prototyping risks while focusing engineering effort directly on TinyML execution and real-time inference.
 
+> **Update – Sensor Change:** The AD8232 modification plan has been **cancelled**. The project now uses **4x ready-made sEMG sensor modules** powered from a **±5V dual supply** through the [4-Channel sEMG & Power Distribution Hub](emg_dagitim_karti_pertinaks_plani.md). Sensor outputs reach the ESP32-S3 through a per-channel **input protection stage** (10 kΩ / 20 kΩ divider or Schottky clamp) so the ADC pins never exceed 3.3V. AD8232-specific notes below are kept for reference; where they conflict, the hub document takes precedence.
+
 ---
 
 ## 1. Engineering Philosophy: Modular & Solderless Architecture
@@ -22,7 +24,8 @@ The entire 4-channel sEMG + 6-axis IMU + TinyML hardware pipeline is procured fo
 | Qty | Component | Technical Function / Model | Estimated Cost (TRY) | Estimated Cost (USD) |
 |---|---|---|---|---|
 | **1x** | **ESP32-S3 Development Board** | Dual-core Xtensa LX7 @ 240 MHz, AI Vector Instructions, 512 KB SRAM, 2x SPI, I2C, 12-bit ADC1 *(ESP32-S3 DevKitC-1 or Seeed Studio XIAO ESP32-S3)* | ~₺220 - ₺280 | ~$7.50 |
-| **4x** | **AD8232 Biopotential Modules** | Single-lead analog front-end breakout boards (red PCB), each bundled with a 3-lead 3.5 mm medical snap cable. Used unmodified (or 1 prototype unit modded for comparative analysis, see [AD8232 EMG Mod Guide](ad8232_emg_modifikasyon_rehberi.md)). | 4 x ~₺110 = ~₺440 | ~$13.50 |
+| **4x** | **Ready-Made sEMG Sensor Modules** | Dual-supply (±Vs, operated at ±5V) surface EMG sensor modules with SIG output. Powered via the [4-Ch sEMG Hub](emg_dagitim_karti_pertinaks_plani.md). *(Replaces the cancelled AD8232 modification plan.)* | — | — |
+| **4+4** | **10 kΩ + 20 kΩ Resistors** | Per-channel voltage divider protecting ESP32-S3 ADC inputs from >3.3V sensor output. | ~₺10 | ~$0.30 |
 | **1x** | **MPU-6050 6-Axis IMU Module** | 3-axis accelerometer + 3-axis gyroscope with integrated DMP, I2C Fast-Mode interface. | ~₺70 - ₺90 | ~$2.50 |
 | **1 Tube** | **Medical Conductive Gel (250 ml)** | Medical EKG/Ultrasound conductive gel applied in micro-droplets on snaps for multi-subject clean data acquisition without single-use pad waste. | ~₺35 - ₺50 | ~$1.20 |
 | **1 Pk** | **Stainless-Steel Snap Fasteners** | 3.7 mm / 4 mm male/female metal snaps perching through the armband to form reusable **snap electrodes**. | ~₺25 - ₺40 | ~$1.00 |
@@ -112,12 +115,13 @@ All modules operate natively from the ESP32-S3's regulated 3.3 V rail. No extern
 
 | Subsystem | Peripheral Module | Module Pin | ESP32-S3 Target Pin | Pin Function / Hardware Channel | Electrical Notes |
 |---|---|---|---|---|---|
-| **Power** | All 4x AD8232 + MPU-6050 | `3.3V` / `VCC` | **3V3** | Regulated 3.3V Power Bus | Common rail from onboard MCU LDO regulator. |
-| **Power** | All 4x AD8232 + MPU-6050 | `GND` | **GND** | System Common Ground | Common low-impedance ground plane. |
-| **sEMG CH1** | AD8232 (Module 1 - FDS) | `OUTPUT` | **GPIO 1** | ADC1_CH0 (Analog Input) | 0.0 V - 3.3 V rail-to-rail analog waveform. |
-| **sEMG CH2** | AD8232 (Module 2 - FPL) | `OUTPUT` | **GPIO 2** | ADC1_CH1 (Analog Input) | 0.0 V - 3.3 V rail-to-rail analog waveform. |
-| **sEMG CH3** | AD8232 (Module 3 - ED) | `OUTPUT` | **GPIO 3** | ADC1_CH2 (Analog Input) | 0.0 V - 3.3 V rail-to-rail analog waveform. |
-| **sEMG CH4** | AD8232 (Module 4 - EPL) | `OUTPUT` | **GPIO 4** | ADC1_CH3 (Analog Input) | 0.0 V - 3.3 V rail-to-rail analog waveform. |
+| **Power** | 4x sEMG Sensors (via Hub) | `+Vs` / `-Vs` | *Not Connected* | External ±5V Dual Supply | Never connected to any ESP32-S3 pin. |
+| **Power** | MPU-6050 | `VCC` | **3V3** | Regulated 3.3V Power Bus | Onboard MCU LDO regulator. |
+| **Power** | Hub + MPU-6050 | `GND` | **GND** | System Common Ground | Sensor GND and ESP32 GND must be common. |
+| **sEMG CH1** | Sensor 1 - FDS (via Hub) | `SIG` | **GPIO 1** | ADC1_CH0 (Analog Input) | Through divider/clamp; must stay within 0 – 3.3 V. |
+| **sEMG CH2** | Sensor 2 - FPL (via Hub) | `SIG` | **GPIO 2** | ADC1_CH1 (Analog Input) | Through divider/clamp; must stay within 0 – 3.3 V. |
+| **sEMG CH3** | Sensor 3 - ED (via Hub) | `SIG` | **GPIO 3** | ADC1_CH2 (Analog Input) | Through divider/clamp; must stay within 0 – 3.3 V. |
+| **sEMG CH4** | Sensor 4 - FCU/EI (via Hub) | `SIG` | **GPIO 4** | ADC1_CH3 (Analog Input) | Through divider/clamp; must stay within 0 – 3.3 V. |
 | **Kinematics**| MPU-6050 IMU | `SDA` | **GPIO 8** | I2C Data (SDA) | Internal pull-up enabled; 400 kHz Fast-Mode. |
 | **Kinematics**| MPU-6050 IMU | `SCL` | **GPIO 9** | I2C Clock (SCL) | Internal pull-up enabled; 400 kHz Fast-Mode. |
 | **Unused** | All AD8232 Modules | `LO+`, `LO-`, `SDN` | *Not Connected* | Leads-Off / Shutdown | Left floating (open circuit). |

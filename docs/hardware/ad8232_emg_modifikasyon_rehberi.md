@@ -1,5 +1,9 @@
 # AD8232 EMG Donanımsal Modifikasyon ve Filtre Dönüşüm Rehberi
 
+> ⚠️ **DURUM: İPTAL EDİLDİ.** Proje, AD8232 kartlarının modifikasyonu yerine **hazır sEMG sensör modülleriyle** devam etmektedir. Bu belge yalnızca referans/arşiv amacıyla korunmaktadır. Güncel sensör besleme ve bağlantı düzeni için: [4 Kanal sEMG & Güç Dağıtım Hub'ı](emg_dagitim_karti_pertinaks_plani.md).
+>
+> **Uyarı:** AD8232 kartları yalnızca **3.3V** ile beslenir (çalışma aralığı 2.0–3.5V, mutlak üst sınır ~3.6V). ±5V'luk dağıtım hub'ına **takılmamalıdır.**
+
 Bu belge, **Nuada Bionic Hand** projesi kapsamında kullanılan Analog Devices **AD8232** tek kanallı biyopotansiyel analog ön uç kartının, fabrika çıkışı olan **EKG (0.5 Hz - 40 Hz)** bandından **yüzeyel EMG (sEMG: 16 Hz - 410 Hz)** bandına donanımsal olarak dönüştürülme sürecini, resmi kaynak doğrulamalarını ve laboratuvar uygulama adımlarını içerir.
 
 ---

@@ -15,6 +15,11 @@ Bu belge; breadboard üzerindeki jumper kablo karmaşasını, temassızlıkları
 | **5'li Erkek Pin Header (2.54 mm)** | 1 | ESP32'ye giden sinyal ve toprak çıkışı (`GND`, `CH1`, `CH2`, `CH3`, `CH4`) |
 | **Montaj Teli / Zil Teli** | ~30 cm | Kartın arkasındaki bağlantı yolları için |
 | *(İsteğe Bağlı)* **100 nF Seramik Kondansatör** | 2 | Besleme gürültü filtreleme (`+Vs - GND` ve `-Vs - GND` arasına) |
+| **10 kΩ Direnç** | 4 | ESP giriş koruması – gerilim bölücünün üst direnci (her kanala 1 adet, bkz. Bölüm 5) |
+| **20 kΩ Direnç** | 4 | ESP giriş koruması – gerilim bölücünün alt direnci (her kanala 1 adet, bkz. Bölüm 5) |
+| *(Alternatif)* **BAT54S Schottky Diyot + 2.2 kΩ Direnç** | 4 + 4 | Bölücü yerine kırpıcı koruma (negatif gerilime karşı da korur, bkz. Bölüm 5) |
+
+> **Not:** Proje, AD8232 kartlarının modifikasyonu yerine **hazır sEMG sensör modülleriyle** devam etmektedir. Bu hub, çift (±Vs) beslemeli hazır sensörler için tasarlanmıştır. AD8232 kartları **tek 3.3V** ile beslenir ve bu hub'a **takılmamalıdır** (5V, AD8232'nin 3.6V mutlak üst sınırını aşar).
 
 ---
 
@@ -51,7 +56,7 @@ Soketler kartın delikli pertinaks yüzeyine aşağıdaki düzende yerleştirili
 
 ## 3. Alt Yüzey Lehimleme ve Hat Bağlantı Şeması (Wiring Side)
 
-Kartın arkasında toplamda yalnızca **4 ana hat** çekilecektir:
+Kartın arkasında toplamda yalnızca **4 ana hat** çekilecektir. *(Sinyal hatlarına eklenecek koruma dirençleri/diyotları için Bölüm 5'e bakınız.)*
 
 ```
 PİL/GÜÇ GİRİŞİ                ORTAK RAYLAR                     SENSÖR SOKETLERİ
@@ -96,6 +101,8 @@ Hazırlanan 3'lü klemens hem masaüstü güç kaynağıyla hem de taşınabilir
    * **`GND` Klemensi:** Ortak 0V köprüsüne bağlanır (0 V).
    * **`-Vs` Klemensi:** CH2 Siyah (-) ucuna bağlanır (-5.0 V).
 
+> **Neden ±3.3V değil?** Çift beslemeli EMG modüllerinin içindeki op-amp'ler (genellikle TL072/TL084) ve enstrümantasyon katı tipik olarak en az **±3.5V** ister. ±3.3V'ta sinyal kırpılır, kazanç düşer veya kart hiç çalışmaz. **±5V önerilen değerdir.** Sensörün kendi veri sayfasındaki minimum besleme değerini mutlaka teyit edin.
+
 ### Mod B: 2 Adet 3.7 V Li-ion / LiPo Pil
 1. **Pil 1'in (-)** kutbu ile **Pil 2'nin (+)** kutbu birbirine bağlanır (Ortak 0V köprüsü).
 2. Klemens bağlantısı:
@@ -105,7 +112,45 @@ Hazırlanan 3'lü klemens hem masaüstü güç kaynağıyla hem de taşınabilir
 
 ---
 
-## 5. ESP32-S3 Ara Bağlantı Tablosu
+## 5. ESP32-S3 Giriş Koruması (Zorunlu)
+
+Besleme hattı (`+Vs` / `-Vs`) ESP32-S3'e **hiçbir zaman** bağlanmaz; ESP'ye yalnızca `GND` ve `CH1–CH4` sinyalleri gider. Ancak sensörler ±5V ile beslendiğinde **SIG çıkışı 3.3V'un üzerine çıkabilir** (özellikle güçlü kasılmada ve kazanç potu yüksekken). ESP32-S3 GPIO pinlerinin mutlak sınırları:
+
+* **Üst sınır:** ~3.6V (VDD + 0.3V) — aşılırsa ADC pini veya çip hasar görür.
+* **Alt sınır:** -0.3V — negatif gerilim de pine zarar verir.
+* **Kullanışlı ADC aralığı (11 dB zayıflatma):** ~0 – 3.1V.
+
+Bu nedenle her kanalda aşağıdaki iki korumadan **biri** uygulanır:
+
+### Seçenek A: Gerilim Bölücü (Önerilen, en basit)
+```
+Sensör SIG ──[10 kΩ]──┬──► ESP32 GPIO (CH)
+                      │
+                   [20 kΩ]
+                      │
+                     GND
+```
+* Oran: 20 / (10 + 20) = **0.667** → en kötü durumda 5.0V çıkış ≈ **3.33V**'a iner.
+* ADC okumaları yazılımda `× 1.5` ile gerçek sensör gerilimine çevrilebilir (sınıflandırma için gerekmez).
+
+### Seçenek B: Seri Direnç + Schottky Kırpıcı Diyot
+```
+                         3V3
+                          ▲
+                          │ (BAT54S üst diyot)
+Sensör SIG ──[2.2 kΩ]──┬──┴──► ESP32 GPIO (CH)
+                       │
+                       ▼ (BAT54S alt diyot)
+                      GND
+```
+* Sinyal ölçeklenmez; 3.3V üstünü ve 0V altını kırpar. Negatif gerilime karşı da korur.
+
+### Kazanç Ayarı
+Korumaya ek olarak, sensörde kazanç potu varsa **maksimum kasılmada SIG çıkışı ~3.0V'u geçmeyecek** şekilde ayarlanmalıdır (Bölüm 7, Test 4).
+
+---
+
+## 6. ESP32-S3 Ara Bağlantı Tablosu
 
 Dağıtım kartındaki 5'li erkek soketten ESP32-S3'e **tek bir 5'li dişi-dişi şerit kablo** çekilir:
 
@@ -121,7 +166,7 @@ Dağıtım kartındaki 5'li erkek soketten ESP32-S3'e **tek bir 5'li dişi-dişi
 
 ---
 
-## 6. Devreye Alma Öncesi 2 Dakikalık Güvenlik Kontrolü (Multimetre Testi)
+## 7. Devreye Alma Öncesi Güvenlik Kontrolü (Multimetre Testi)
 
 Lehimleme bittikten sonra sensörleri ve ESP32'yi **takmadan önce** multimetreyle şu 3 testi yapın:
 
@@ -134,5 +179,11 @@ Lehimleme bittikten sonra sensörleri ve ESP32'yi **takmadan önce** multimetrey
 - [ ] **3. Voltaj Doğrulama (DC Volt Modu):**
   * Güç kaynağını veya pilleri klemense bağlayın (sensörler henüz takılı değil).
   * Siyah prob `GND`'deyken; `+Vs`'de **+3.7V / +5.0V**, `-Vs`'de ise **-3.7V / -5.0V** okunduğunu teyit edin.
+- [ ] **4. Sensör Çıkış Gerilimi Testi (ESP32 takılı DEĞİLKEN):**
+  * Sensörleri takın ve elektrotları kola yerleştirin; ESP32 soketi boş kalsın.
+  * Kası **maksimum kuvvetle** kasarken her kanalın `SIG` – `GND` gerilimini ölçün.
+  * Koruma devresinden **sonraki** noktada (ESP soketinin CH pini) okunan değer **3.3V'u geçmemeli** ve **0V'un altına inmemelidir**. Geçiyorsa kazanç potunu düşürün.
+- [ ] **5. -Vs İzolasyon Testi (Buzzer Modu):**
+  * `-Vs` klemensi ile ESP32 soketinin tüm pinleri arasında **süreklilik olmamalıdır.**
 
 Bu testler tamamlandıktan sonra sensörler ve ESP32 güvenle takılabilir. Breadboard üzerindeki onlarca jumper kablo tek bir kompakt dağıtım modülüne dönüşmüş olur.

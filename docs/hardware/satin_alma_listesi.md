@@ -20,7 +20,7 @@ Bunun yerine biyomedikal laboratuvarlarında kullanılan en akıllıca yöntemi 
 | Sıra | Malzeme Adı | Adet | Sitelerde Ne Diye Aratacaksınız? | Tahmini Fiyat |
 |:---:|---|:---:|---|:---:|
 | **1** | **ESP32-S3 Geliştirme Kartı** | 1 Adet | `ESP32-S3-DevKitC-1 N16R8 Çift Type-C` *(WROOM-1 Dahili Antenli)* | ~250 - 300 TL |
-| **2** | **AD8232 Sensör Modülü** | 4 Adet | `AD8232 EKG Nabız Sensörü Modülü (Kablolu Set)` | 4 x ~110 = 440 TL |
+| **2** | **Hazır sEMG Sensör Modülü** *(AD8232 yerine – satın alındı)* | 4 Adet | Çift beslemeli (±Vs) EMG kas sensörü modülü | — |
 | **3** | **MPU-6050 IMU Modülü** | 1 Adet | `GY-521 MPU-6050 6 Eksen İvme ve Jiroskop Modülü` | ~70 - 90 TL |
 | **4** | **İletken EKG / Ultrason Jeli (Tüp)** | 1 Adet (250 ml) | `Medikal İletken EKG / Ultrason Jeli 250 ml` | ~35 - 50 TL |
 | **5** | **Paslanmaz Çelik Çıtçıt Buton Seti** | 1 Paket | `Paslanmaz Çelik Çıtçıt Düğme Seti (Metal / 10-12 mm)` *(Tuhafiyeden/Trendyol'dan)* | ~30 - 40 TL |
