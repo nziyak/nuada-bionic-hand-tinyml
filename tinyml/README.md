@@ -21,7 +21,7 @@ Proje şartnamesi ve onaylanan görev dağılımı uyarınca iki araştırmacın
 
 ---
 
-## 2. Hakem ve Claude Düzeltmesi: Evrensel Öznitelik Mühendisliği
+## 2. Sinyal Tipi Uyarlaması: Zarf (Envelope) ve Ham AC EMG için Evrensel Öznitelik Mühendisliği
 
 İnternetteki açık veri setleri ile kendi ürettiğimiz donanım arasında sinyal tipi farkı bulunmaktadır:
 

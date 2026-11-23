@@ -9,7 +9,7 @@ Bu modül, sEMG ve IMU zaman serisi verilerinden 200 ms kayan pencere (sliding w
 üzerinde hem ham AC sinyallerinde hem de TL084 donanımsal zarf (envelope) DC sinyallerinde
 kararlı çalışan 19 öznitelikli evrensel öznitelik vektörünü çıkarır.
 
-Öznitelik Seçimi Gerekçesi (Hakem & Claude Düzeltmesi):
+Öznitelik Seçimi Gerekçesi (Zarf ve Ham Sinyal Uyumluluğu):
 - Klasik Hudgins ZC (Zero Crossing) zarf sinyalinde hep 0 çıkar çünkü sinyal 0-3.3V DC arasındadır.
 - ZC yerine MFD (Mean First Difference / Slope) seçilmiştir.
 - 4 EMG Kanalı x 4 Öznitelik = 16 EMG Özniteliği:
