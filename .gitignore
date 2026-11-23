@@ -27,6 +27,7 @@ venv.bak/
 .idea/
 *.sublime-project
 *.sublime-workspace
+*.code-workspace
 *.swp
 *.swo
 *~
@@ -36,6 +37,8 @@ venv.bak/
 *.log
 *.tmp
 *.bak
+*.tflite
+*.h5
 
 # Dataset files (large CSVs)
 data/*.csv

@@ -140,6 +140,7 @@ nuada-bionic-hand-tinyml/
 │   ├── presentations/                      # Official project proposal & final presentations
 │   └── archive/                            # Historical transcripts & initial scratch lab notes
 ├── firmware/                               # ESP32-S3 C++ firmware (PlatformIO)
+├── tinyml/                                 # Deep TinyML, 1D-CNN/MLP, INT8 quantization & Core 1 deployment (Ziya)
 ├── scripts/                                # Python multi-angle acquisition, visualizer & tools
 ├── Simulation/                             # Three.js + TypeScript 3D virtual bionic hand digital-twin
 ├── data/                                   # Local dataset records (raw 100 Hz CSVs)
@@ -149,6 +150,7 @@ nuada-bionic-hand-tinyml/
 ---
 
 ## 📚 Technical Documentation Links
+* [Nuri Ziya Kırtepe - Deep TinyML & Hard Real-Time OS Guide](tinyml/README.md)
 * [Multi-Subject Multi-Angle Data Collection Guide (Master Protocol)](docs/protocols/coklu_denek_veri_toplama_kilavuzu.md)
 * [Final Hardware Specification, BOM & Wiring Architecture](docs/hardware/hardware_specification_and_bom.md)
 * [4-Channel sEMG & Power Distribution Hub (Perfboard Plan)](docs/hardware/emg_dagitim_karti_pertinaks_plani.md)
