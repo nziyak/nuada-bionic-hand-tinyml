@@ -1,7 +1,26 @@
 # Nuada - 4 Kanal sEMG & Güç Dağıtım Hub'ı
 ## Delikli Pertinaks (Perfboard) Yerleşim ve Lehimleme Kılavuzu
 
-Bu belge; breadboard üzerindeki jumper kablo karmaşasını, temassızlıkları ve sinyal parazitlerini ortadan kaldırmak amacıyla tasarlanan **4 Kanal sEMG & Güç Dağıtım Hub'ı**nın delikli pertinaks üzerindeki bileşen yerleşimini, lehim yollarını ve kablo bağlantılarını içerir.
+Bu belge; breadboard üzerindeki jumper kablo karmaşasını, temassızlıkları ve sinyal parazitlerini ortadan kaldırmak amacıyla tasarlanan **4 Kanal sEMG & Güç Dağıtım Hub'ı**nın delikli pertinaks üzerindeki bileşen yerleşimini, delik delik lehim planını ve kablo bağlantılarını içerir.
+
+---
+
+## 0. Kullanılan Sensör ve Ölçülen Değerler
+
+| Özellik | Değer |
+| :--- | :--- |
+| **Modül** | Hazır sEMG kas sensörü (TLS Robotik AC-NB084) – Advancer Technologies *Muscle Sensor V3* klonu, 27.3 × 27.3 mm kırmızı kart |
+| **Yükselteç** | TL084 (4'lü op-amp) |
+| **Besleme konnektörü (J1)** | `+Vs` · `GND` · `-Vs` → **çift (±) besleme** (satıcı sayfasındaki "3.3–5V" bilgisi yanıltıcıdır) |
+| **Sinyal konnektörü (J2)** | `SIG` · `GND` |
+| **Elektrot girişi** | 3.5 mm jak (kas ortası, kas ucu, referans) |
+| **Kazanç potu** | Yok (sabit kazanç) |
+| **Çalışma beslemesi** | **±5V** |
+| **Ölçülen çıkış (osiloskop, ±5V)** | Dinlenme ~0V · Kasılmada yalnızca **pozitif**, doğrultulmuş sivri darbeler · Tepe **2.5 – 3.3V** · En düşük **-40 mV** |
+
+> **Sonuç:** ±5V'ta TL084 çıkışı fiziksel olarak ~3.3–3.5V'u geçemez. Her kanala bir **10 kΩ / 20 kΩ gerilim bölücü** yeterlidir (ESP'ye en fazla ~2.3V ulaşır). Diyot veya başka koruma parçası gerekmez.
+>
+> **Yazılım notu:** Sinyal milisaniyelik darbelerden oluştuğu için 100 Hz örnekleme yetersizdir; ESP32-S3 tarafında **~1000 Hz** örnekleme + pencere RMS/ortalama kullanılmalıdır. Dinlenme tabanı **~0** (AD8232'deki 2048 değil). Multimetre bu sinyalin yalnızca ortalamasını (~0.1–0.5V) gösterir; tepe ölçümü için osiloskop kullanın.
 
 ---
 
@@ -9,181 +28,203 @@ Bu belge; breadboard üzerindeki jumper kablo karmaşasını, temassızlıkları
 
 | Parça | Adet | Açıklama |
 | :--- | :--- | :--- |
-| **Delikli Pertinaks / Plaket** | 1 | Standart delikli tek yüzey pertinaks (~5 cm x 5 cm veya daha küçük) |
-| **4'lü Dişi Pin Header (2.54 mm)** | 4 | Sensör modüllerinden gelen kablolar için (CH1, CH2, CH3, CH4) |
-| **3'lü Vidalı Klemens (veya Erkek Header)** | 1 | Güç besleme girişi (`+Vs`, `GND`, `-Vs`) |
-| **5'li Erkek Pin Header (2.54 mm)** | 1 | ESP32'ye giden sinyal ve toprak çıkışı (`GND`, `CH1`, `CH2`, `CH3`, `CH4`) |
-| **Montaj Teli / Zil Teli** | ~30 cm | Kartın arkasındaki bağlantı yolları için |
-| *(İsteğe Bağlı)* **100 nF Seramik Kondansatör** | 2 | Besleme gürültü filtreleme (`+Vs - GND` ve `-Vs - GND` arasına) |
-| **10 kΩ Direnç** | 4 | ESP giriş koruması – gerilim bölücünün üst direnci (her kanala 1 adet, bkz. Bölüm 5) |
-| **20 kΩ Direnç** | 4 | ESP giriş koruması – gerilim bölücünün alt direnci (her kanala 1 adet, bkz. Bölüm 5) |
-| *(Alternatif)* **BAT54S Schottky Diyot + 2.2 kΩ Direnç** | 4 + 4 | Bölücü yerine kırpıcı koruma (negatif gerilime karşı da korur, bkz. Bölüm 5) |
-
-> **Not:** Proje, AD8232 kartlarının modifikasyonu yerine **hazır sEMG sensör modülleriyle** devam etmektedir. Bu hub, çift (±Vs) beslemeli hazır sensörler için tasarlanmıştır. AD8232 kartları **tek 3.3V** ile beslenir ve bu hub'a **takılmamalıdır** (5V, AD8232'nin 3.6V mutlak üst sınırını aşar).
-
----
-
-## 2. Üst Yüzey Bileşen Yerleşim Planı (Component Side)
-
-Soketler kartın delikli pertinaks yüzeyine aşağıdaki düzende yerleştirilir:
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│              4 KANAL sEMG DAĞITIM HUB'I (ÜSTTEN GÖRÜNÜM)               │
-│                                                                        │
-│   [ GÜÇ GİRİŞİ ]                          [ ESP32 BAĞLANTI SOKETİ ]    │
-│   (3'lü Vidalı Klemens)                   (5'li Erkek Header)          │
-│     ┌───┬───┬───┐                           ┌───┬───┬───┬───┬───┐      │
-│     │+Vs│GND│-Vs│                           │GND│CH1│CH2│CH3│CH4│      │
-│     └───┴───┴───┘                           └───┴───┴───┴───┴───┘      │
-│       1   2   3                               1   2   3   4   5        │
-│                                                                        │
-│   ──────────────────────────────────────────────────────────────────   │
-│                                                                        │
-│   [ SENSÖR 1 ]       [ SENSÖR 2 ]       [ SENSÖR 3 ]       [ SENSÖR 4 ]│
-│   (4'lü Dişi)        (4'lü Dişi)        (4'lü Dişi)        (4'lü Dişi) │
-│   ┌──────────┐       ┌──────────┐       ┌──────────┐       ┌──────────┐│
-│ 1 │ +Vs      │     1 │ +Vs      │     1 │ +Vs      │     1 │ +Vs      ││
-│ 2 │ GND      │     2 │ GND      │     2 │ GND      │     2 │ GND      ││
-│ 3 │ -Vs      │     3 │ -Vs      │     3 │ -Vs      │     3 │ -Vs      ││
-│ 4 │ SIG      │     4 │ SIG      │     4 │ SIG      │     4 │ SIG      ││
-│   └──────────┘       └──────────┘       └──────────┘       └──────────┘│
-│       (FDS)              (FPL)              (ED)             (FCU/EI)  │
-└────────────────────────────────────────────────────────────────────────┘
-```
+| **Delikli Pertinaks / Plaket** | 1 | Tek yüzey, ada (pad) tipi, 2.54 mm aralık. **En az 22 × 16 delik** (~6 × 4.5 cm) |
+| **4'lü Dişi Pin Header (2.54 mm)** | 4 | Sensör kabloları için (CH1–CH4) |
+| **3'lü Vidalı Klemens (5.08 mm)** | 1 | Güç girişi (`+Vs`, `GND`, `-Vs`) |
+| **5'li Erkek Pin Header (2.54 mm)** | 1 | ESP32'ye giden çıkış (`GND`, `CH1`–`CH4`) |
+| **10 kΩ Direnç (1/4 W)** | 4 | Bölücü üst direnci (kahverengi-siyah-turuncu) |
+| **20 kΩ Direnç (1/4 W)** | 4 | Bölücü alt direnci (kırmızı-siyah-turuncu). Yoksa **22 kΩ** (kırmızı-kırmızı-turuncu) |
+| **Çıplak kalaylı tel** (veya kesilmiş direnç bacakları) | ~25 cm | Arka yüzdeki 3 ray (+Vs, -Vs, GND) |
+| **İzoleli ince montaj teli** (zil teli / 30 AWG) | ~1 m | Sensör soketlerinden raylara ve ESP soketine giden hatlar |
+| **Dişi-Erkek Jumper Kablo** | 16 | Sensör kartı (dişi uç) → hub soketi (erkek uç), kanal başına 4 adet |
+| **Dişi-Dişi Jumper Kablo** | 5 | Hub ESP soketi → ESP32-S3 pinleri |
+| *(İsteğe Bağlı)* **100 nF Seramik Kondansatör** | 2 | Besleme gürültü filtresi (`+Vs–GND` ve `-Vs–GND` arasına, klemense yakın) |
 
 ---
 
-## 3. Alt Yüzey Lehimleme ve Hat Bağlantı Şeması (Wiring Side)
+## 2. Devre Şeması (Tek Kanal)
 
-Kartın arkasında toplamda yalnızca **4 ana hat** çekilecektir. *(Sinyal hatlarına eklenecek koruma dirençleri/diyotları için Bölüm 5'e bakınız.)*
+Her kanal aynıdır; dört kez tekrarlanır:
 
 ```
-PİL/GÜÇ GİRİŞİ                ORTAK RAYLAR                     SENSÖR SOKETLERİ
-══════════════                ════════════                     ════════════════
-
-(+Vs Klemensi) ──[Tel 1]──┬───► Sensör 1 (+Vs - Pin 1)
-                          ├───► Sensör 2 (+Vs - Pin 1)
-                          ├───► Sensör 3 (+Vs - Pin 1)
-                          └───► Sensör 4 (+Vs - Pin 1)
-
-(GND Klemensi) ──[Tel 2]──┬───► ESP32 Soketi (GND - Pin 1)
-                          ├───► Sensör 1 (GND - Pin 2)
-                          ├───► Sensör 2 (GND - Pin 2)
-                          ├───► Sensör 3 (GND - Pin 2)
-                          └───► Sensör 4 (GND - Pin 2)
-
-(-Vs Klemensi) ──[Tel 3]──┬───► Sensör 1 (-Vs - Pin 3)
-                          ├───► Sensör 2 (-Vs - Pin 3)
-                          ├───► Sensör 3 (-Vs - Pin 3)
-                          └───► Sensör 4 (-Vs - Pin 3)
-
-
-SİNYAL ÇIKIŞLARI              DORUDAN HATLAR                   ESP32 SOKETİ
-════════════════              ══════════════                   ════════════
-Sensör 1 (SIG - Pin 4) ──────────[Tel 4A]────────────────────► ESP32 (CH1 - Pin 2)
-Sensör 2 (SIG - Pin 4) ──────────[Tel 4B]────────────────────► ESP32 (CH2 - Pin 3)
-Sensör 3 (SIG - Pin 4) ──────────[Tel 4C]────────────────────► ESP32 (CH3 - Pin 4)
-Sensör 4 (SIG - Pin 4) ──────────[Tel 4D]────────────────────► ESP32 (CH4 - Pin 5)
+ Güç klemensi                     Sensör soketi (dişi)              ESP32 soketi
+ ─────────────                    ─────────────────────             ────────────
+ +Vs ── [+Vs rayı] ─────────────► pin 1 (+Vs)
+ GND ── [GND rayı] ─────────────► pin 2 (GND)
+ -Vs ── [-Vs rayı] ─────────────► pin 3 (-Vs)
+                                  pin 4 (SIG) ──[10 kΩ]──●──────────► CHk
+                                                         │
+                                                      [20 kΩ]
+                                                         │
+                                  [GND rayı] ────────────┴──────────► GND
 ```
+
+* **`+Vs` ve `-Vs` hiçbir şekilde ESP soketine gitmez.**
+* Bölücü oranı 20 / (10 + 20) = **0.667** → 3.3V tepe ≈ **2.2V**, -40 mV ≈ **-27 mV** (ESP sınırları: -0.3V … 3.6V).
 
 ---
 
-## 4. Güç Kaynağı ve Pil Bağlantı Modları
+## 3. Delik Delik Yerleşim Planı (Üstten Görünüm)
 
-Hazırlanan 3'lü klemens hem masaüstü güç kaynağıyla hem de taşınabilir pillerle **aynı şekilde** kullanılır:
+Kartı, **sol üst köşe = satır 1, sütun 1** olacak şekilde tutun. Satırlar yukarıdan aşağıya (1–16), sütunlar soldan sağa (01–22) numaralandırılır. Kart daha büyükse planı sol üst köşeden başlatın.
 
-### Mod A: Çift Çıkışlı Masaüstü DC Güç Kaynağı (UNI-T)
-1. Güç kaynağında CH1 ve CH2 bağımsız modda **5.00 V** ayarlanır.
-2. **CH1 Siyah (-)** ile **CH2 Kırmızı (+)** birbirine bağlanır (Ortak 0V köprüsü).
-3. Klemens bağlantısı:
-   * **`+Vs` Klemensi:** CH1 Kırmızı (+) ucuna bağlanır (+5.0 V).
-   * **`GND` Klemensi:** Ortak 0V köprüsüne bağlanır (0 V).
-   * **`-Vs` Klemensi:** CH2 Siyah (-) ucuna bağlanır (-5.0 V).
+```
+     01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22
+ 1    . K+  . K0  . K-  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+ 2    . P= P= P= P= P= P= P= P= P= P= P= P= P= P= P= P= P= P= P=  .  .
+ 3    .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+ 4    . N= N= N= N= N= N= N= N= N= N= N= N= N= N= N= N= N= N= N=  .  .
+ 5    .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+ 6    . G= G= G= d1 G= G= G= G= d2 G= G= G= G= d3 G= G= G= G= d4 G= E0
+ 7    .  .  .  .  :  .  .  .  .  :  .  .  .  .  :  .  .  .  .  :  . E1
+ 8    .  .  .  .  :  .  .  .  .  :  .  .  .  .  :  .  .  .  .  :  . E2
+ 9    .  .  .  .  :  .  .  .  .  :  .  .  .  .  :  .  .  .  .  :  . E3
+10    .  .  .  . c1  .  .  .  . c2  .  .  .  . c3  .  .  .  . c4  . E4
+11    .  .  .  . b1  .  .  .  . b2  .  .  .  . b3  .  .  .  . b4  .  .
+12    .  .  .  .  |  .  .  .  .  |  .  .  .  .  |  .  .  .  .  |  .  .
+13    .  .  .  .  |  .  .  .  .  |  .  .  .  .  |  .  .  .  .  |  .  .
+14    .  .  .  .  |  .  .  .  .  |  .  .  .  .  |  .  .  .  .  |  .  .
+15    .  .  .  . a1  .  .  .  . a2  .  .  .  . a3  .  .  .  . a4  .  .
+16    . 1+ 10 1- 1S  . 2+ 20 2- 2S  . 3+ 30 3- 3S  . 4+ 40 4- 4S  .  .
+```
 
-> **Neden ±3.3V değil?** Çift beslemeli EMG modüllerinin içindeki op-amp'ler (genellikle TL072/TL084) ve enstrümantasyon katı tipik olarak en az **±3.5V** ister. ±3.3V'ta sinyal kırpılır, kazanç düşer veya kart hiç çalışmaz. **±5V önerilen değerdir.** Sensörün kendi veri sayfasındaki minimum besleme değerini mutlaka teyit edin.
+**Gösterim:**
 
-### Mod B: 2 Adet 3.7 V Li-ion / LiPo Pil
-1. **Pil 1'in (-)** kutbu ile **Pil 2'nin (+)** kutbu birbirine bağlanır (Ortak 0V köprüsü).
-2. Klemens bağlantısı:
-   * **`+Vs` Klemensi:** Pil 1'in (+) kutbuna bağlanır (+3.7 V / 4.2 V).
-   * **`GND` Klemensi:** İki pilin birleştiği orta noktaya bağlanır (0 V).
-   * **`-Vs` Klemensi:** Pil 2'nin (-) kutbuna bağlanır (-3.7 V / -4.2 V).
+| İşaret | Anlamı |
+| :--- | :--- |
+| `K+` `K0` `K-` | Güç klemensi bacakları: `+Vs`, `GND`, `-Vs` (5.08 mm aralık → 1 delik boşluklu) |
+| `P=` | **+Vs rayı** (satır 2, arka yüzde çıplak tel) |
+| `N=` | **-Vs rayı** (satır 4, arka yüzde çıplak tel) |
+| `G=` | **GND rayı** (satır 6, arka yüzde çıplak tel) |
+| `E0`–`E4` | ESP soketi (5'li erkek header, dik): `E0`=GND, `E1`=CH1, `E2`=CH2, `E3`=CH3, `E4`=CH4 |
+| `k+` `k0` `k-` `kS` | k. sensör soketi (4'lü dişi header): `+Vs`, `GND`, `-Vs`, `SIG` |
+| `ak`–`bk` (`|`) | k. kanalın **10 kΩ** direnci (bacaklar `a` ve `b` deliklerinde, 4 delik aralık) |
+| `ck`–`dk` (`:`) | k. kanalın **20 kΩ** direnci (`d` bacağı doğrudan GND rayına lehimlenir) |
+
+Kanal sütunları: **CH1 = 02–05**, **CH2 = 07–10**, **CH3 = 12–15**, **CH4 = 17–20**.
 
 ---
 
-## 5. ESP32-S3 Giriş Koruması (Zorunlu)
+## 4. Tel Bağlantı Listesi
 
-Besleme hattı (`+Vs` / `-Vs`) ESP32-S3'e **hiçbir zaman** bağlanmaz; ESP'ye yalnızca `GND` ve `CH1–CH4` sinyalleri gider. Ancak sensörler ±5V ile beslendiğinde **SIG çıkışı 3.3V'un üzerine çıkabilir** (özellikle güçlü kasılmada ve kazanç potu yüksekken). ESP32-S3 GPIO pinlerinin mutlak sınırları:
+Koordinatlar **(satır, sütun)** biçimindedir. "Köprü" = komşu iki deliği lehimle birleştirmek. Raylar arasından geçen tüm teller **izoleli** olmalıdır.
 
-* **Üst sınır:** ~3.6V (VDD + 0.3V) — aşılırsa ADC pini veya çip hasar görür.
-* **Alt sınır:** -0.3V — negatif gerilim de pine zarar verir.
-* **Kullanışlı ADC aralığı (11 dB zayıflatma):** ~0 – 3.1V.
+### 4.1 Raylar (arka yüz, çıplak tel)
+| # | Hat | Nereden → Nereye |
+| :-: | :--- | :--- |
+| R1 | +Vs rayı | (2,02) → (2,20) boyunca düz tel, her 3–4 delikte bir lehim |
+| R2 | -Vs rayı | (4,02) → (4,20) |
+| R3 | GND rayı | (6,02) → (6,21) |
 
-Bu nedenle her kanalda aşağıdaki iki korumadan **biri** uygulanır:
+### 4.2 Güç girişi ve ESP GND
+| # | Hat | Nereden → Nereye | Tel |
+| :-: | :--- | :--- | :--- |
+| W1 | Klemens +Vs | (1,02) ↔ (2,02) | Köprü |
+| W2 | Klemens GND | (1,04) → (6,04) | **İzoleli** (+Vs ve -Vs raylarının üstünden geçer) |
+| W3 | Klemens -Vs | (1,06) → (4,06) | **İzoleli** (+Vs rayının üstünden geçer) |
+| W4 | ESP GND | (6,22) ↔ (6,21) | Köprü |
 
-### Seçenek A: Gerilim Bölücü (Önerilen, en basit)
-```
-Sensör SIG ──[10 kΩ]──┬──► ESP32 GPIO (CH)
-                      │
-                   [20 kΩ]
-                      │
-                     GND
-```
-* Oran: 20 / (10 + 20) = **0.667** → en kötü durumda 5.0V çıkış ≈ **3.33V**'a iner.
-* ADC okumaları yazılımda `× 1.5` ile gerçek sensör gerilimine çevrilebilir (sınıflandırma için gerekmez).
+### 4.3 Her kanal için (c = kanalın ilk sütunu: CH1=02, CH2=07, CH3=12, CH4=17)
+| # | Hat | Nereden → Nereye | Tel |
+| :-: | :--- | :--- | :--- |
+| 1 | Soket +Vs → +Vs rayı | (16, c) → (2, c) | **İzoleli** |
+| 2 | Soket GND → GND rayı | (16, c+1) → (6, c+1) | İzoleli (önerilir) |
+| 3 | Soket -Vs → -Vs rayı | (16, c+2) → (4, c+2) | **İzoleli** (GND rayının üstünden geçer) |
+| 4 | Soket SIG → 10 kΩ alt bacak | (16, c+3) ↔ (15, c+3) | Köprü |
+| 5 | Bölücü orta noktası | (11, c+3) ↔ (10, c+3) | Köprü (10k üst bacak + 20k alt bacak) |
+| 6 | Orta nokta → ESP soketi | (10, c+3) → (5+k, 22) | **İzoleli** (CH1→(7,22), CH2→(8,22), CH3→(9,22), CH4→(10,22)) |
 
-### Seçenek B: Seri Direnç + Schottky Kırpıcı Diyot
-```
-                         3V3
-                          ▲
-                          │ (BAT54S üst diyot)
-Sensör SIG ──[2.2 kΩ]──┬──┴──► ESP32 GPIO (CH)
-                       │
-                       ▼ (BAT54S alt diyot)
-                      GND
-```
-* Sinyal ölçeklenmez; 3.3V üstünü ve 0V altını kırpar. Negatif gerilime karşı da korur.
+Açık hâliyle:
 
-### Kazanç Ayarı
-Korumaya ek olarak, sensörde kazanç potu varsa **maksimum kasılmada SIG çıkışı ~3.0V'u geçmeyecek** şekilde ayarlanmalıdır (Bölüm 7, Test 4).
+| Kanal | +Vs teli | GND teli | -Vs teli | SIG köprü | 10 kΩ | 20 kΩ | Orta nokta → ESP |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| CH1 | (16,02)→(2,02) | (16,03)→(6,03) | (16,04)→(4,04) | (16,05)↔(15,05) | (15,05)–(11,05) | (10,05)–(6,05) | (10,05)→(7,22) `E1` |
+| CH2 | (16,07)→(2,07) | (16,08)→(6,08) | (16,09)→(4,09) | (16,10)↔(15,10) | (15,10)–(11,10) | (10,10)–(6,10) | (10,10)→(8,22) `E2` |
+| CH3 | (16,12)→(2,12) | (16,13)→(6,13) | (16,14)→(4,14) | (16,15)↔(15,15) | (15,15)–(11,15) | (10,15)–(6,15) | (10,15)→(9,22) `E3` |
+| CH4 | (16,17)→(2,17) | (16,18)→(6,18) | (16,19)→(4,19) | (16,20)↔(15,20) | (15,20)–(11,20) | (10,20)–(6,20) | (10,20)→(10,22) `E4` |
+
+*(İsteğe bağlı 100 nF kondansatörler: biri +Vs rayı ile GND rayı arasına, biri -Vs rayı ile GND rayı arasına, klemense yakın boş deliklere; bacaklar raylara kısa izoleli tellerle bağlanır.)*
 
 ---
 
-## 6. ESP32-S3 Ara Bağlantı Tablosu
+## 5. Lehimleme Sırası
 
-Dağıtım kartındaki 5'li erkek soketten ESP32-S3'e **tek bir 5'li dişi-dişi şerit kablo** çekilir:
+1. **Plan çizimi:** Kartın üstüne kurşun kalemle satır 1/sütun 1'i ve kanal sütunlarını işaretleyin.
+2. **Raylar (R1–R3):** Arka yüzde 2., 4. ve 6. satırlara çıplak teli yatırın, her 3–4 delikte bir lehimleyin. Raylar **birbirine değmemeli** (aralarında birer boş satır var).
+3. **Dirençler (en alçak parçalar önce):** 4 × 10 kΩ'u `a`–`b`, 4 × 20 kΩ'u `c`–`d` deliklerine takın, lehimleyin, bacak fazlalarını kesin. `d` bacakları GND rayına lehimlenir.
+4. **Köprüler:** Her kanalda (16,c+3)↔(15,c+3) ve (11,c+3)↔(10,c+3) köprülerini yapın. W1 ve W4 köprülerini yapın.
+5. **Soketler:** 4 adet 4'lü dişi header'ı 16. satıra, 5'li erkek header'ı 22. sütuna (satır 6–10), klemensi 1. satıra lehimleyin.
+6. **İzoleli teller:** Önce güç (W2, W3), sonra her kanalın +Vs / GND / -Vs telleri, en son orta nokta → ESP telleri.
+7. **Temizlik:** Lehim artıklarını ve komşu adalar arasındaki istenmeyen köprüleri büyüteçle kontrol edin.
 
-| Dağıtım Kartı Pini | ESP32-S3 Pini | Sinyal Tanımı | Donanımsal ADC Kanalı |
+---
+
+## 6. Güç Kaynağı Bağlantısı
+
+### Masaüstü Çift Çıkışlı DC Güç Kaynağı (UNI-T) — Önerilen
+1. Kaynağı **Independent (bağımsız)** moda alın.
+2. CH1 ve CH2: **5.00 V**, akım limiti **0.1–0.2 A**, varsa OVP **5.5 V**.
+3. **CH1 Siyah (-)** ile **CH2 Kırmızı (+)** birbirine bağlanır (ortak 0V köprüsü).
+4. Klemens bağlantısı:
+   * **`K+` (+Vs):** CH1 Kırmızı (+) → +5.0 V
+   * **`K0` (GND):** Ortak 0V köprüsü → 0 V
+   * **`K-` (-Vs):** CH2 Siyah (-) → -5.0 V
+5. Normal çalışmada **CV** lambası yanar ve 4 sensörle toplam akım birkaç on mA'dır. **CC** lambası yanarsa çıkışı kapatıp bağlantıları kontrol edin.
+
+> **Neden ±3.3V değil?** TL084 op-amp'leri yaklaşık ±5V altında düzgün çalışmaz; ±3.3V'ta sinyal kırpılır veya kart hiç çalışmaz.
+
+### Pil ile Çalışma
+* **2 × 3.7 V LiPo (±3.7V) KULLANMAYIN.** TL084 için yetersizdir ve pil boşaldıkça (~3.2V) daha da düşer.
+* Pille çalışmak gerekirse besleme **±5V'a regüle edilmeli** ya da **2 × 9V pil (±9V)** kullanılmalıdır. **±9V'ta çıkış ~7.5V'a kadar çıkabilir; bu durumda 20 kΩ yerine 4.7 kΩ kullanılmalıdır** (10k/4.7k → 7.5V ≈ 2.4V).
+
+---
+
+## 7. Bağlantı Tabloları
+
+### 7.1 Sensör Kartı → Hub (kanal başına 4 dişi-erkek jumper)
+| Sensör kartı pini | Hub soket pini |
+| :--- | :--- |
+| J1 `+Vs` | `k+` |
+| J1 `GND` | `k0` |
+| J1 `-Vs` | `k-` |
+| J2 `SIG` | `kS` |
+
+*(J1'in pin sırası hub soketiyle aynıdır: +Vs, GND, -Vs. J2'deki GND boş kalabilir.)*
+
+### 7.2 Hub → ESP32-S3 (5 dişi-dişi jumper)
+| Hub ESP soketi | ESP32-S3 Pini | Sinyal | ADC Kanalı |
 | :--- | :--- | :--- | :--- |
-| **`GND`** | **`GND`** | Ortak Toprak Hattı | Sistem Referansı (0 V) |
-| **`CH1`** | **`GPIO 1`** | FDS Kas Sinyali (İç Orta - Yumruk) | ADC1_CH0 |
-| **`CH2`** | **`GPIO 2`** | FPL Kas Sinyali (İç Başparmak - Pinch) | ADC1_CH1 |
-| **`CH3`** | **`GPIO 3`** | ED Kas Sinyali (Dış Orta - El Açma) | ADC1_CH2 |
-| **`CH4`** | **`GPIO 4`** | FCU/EI Kas Sinyali (Bilek / İşaret) | ADC1_CH3 |
+| **`E0`** | **`GND`** | Ortak Toprak | Referans (0 V) |
+| **`E1`** | **`GPIO 1`** | CH1 – FDS (İç Orta - Yumruk) | ADC1_CH0 |
+| **`E2`** | **`GPIO 2`** | CH2 – FPL (İç Başparmak - Pinch) | ADC1_CH1 |
+| **`E3`** | **`GPIO 3`** | CH3 – ED (Dış Orta - El Açma) | ADC1_CH2 |
+| **`E4`** | **`GPIO 4`** | CH4 – FCU/EI (Bilek / İşaret) | ADC1_CH3 |
 
-*(MPU-6050 modülü doğrudan ESP32-S3'ün `3V3`, `GND`, `GPIO 8 (SDA)` ve `GPIO 9 (SCL)` pinlerine bağlı kalır).*
+*(MPU-6050 modülü doğrudan ESP32-S3'ün `3V3`, `GND`, `GPIO 8 (SDA)` ve `GPIO 9 (SCL)` pinlerine bağlı kalır.)*
 
 ---
 
-## 7. Devreye Alma Öncesi Güvenlik Kontrolü (Multimetre Testi)
+## 8. Devreye Alma Öncesi Güvenlik Kontrolü
 
-Lehimleme bittikten sonra sensörleri ve ESP32'yi **takmadan önce** multimetreyle şu 3 testi yapın:
+Lehimleme bittikten sonra sensörleri ve ESP32'yi **takmadan önce**:
 
-- [ ] **1. Kısa Devre Testi (Buzzer Modu):**
-  * Klemens üzerindeki `+Vs` ile `GND` arasına probları değdirin -> **Ötmemelidir.**
-  * Klemens üzerindeki `-Vs` ile `GND` arasına probları değdirin -> **Ötmemelidir.**
-  * Klemens üzerindeki `+Vs` ile `-Vs` arasına probları değdirin -> **Ötmemelidir.**
-- [ ] **2. Ortak Toprak Süreklilik Testi (Buzzer Modu):**
-  * `GND` klemensine bir probu koyun; 4 sensör soketinin 2. pinlerine ve ESP32 soketinin 1. pinine sırayla değdirin -> **Hepsinde öterek sıfır direnç (0 Ω) vermelidir.**
-- [ ] **3. Voltaj Doğrulama (DC Volt Modu):**
-  * Güç kaynağını veya pilleri klemense bağlayın (sensörler henüz takılı değil).
-  * Siyah prob `GND`'deyken; `+Vs`'de **+3.7V / +5.0V**, `-Vs`'de ise **-3.7V / -5.0V** okunduğunu teyit edin.
-- [ ] **4. Sensör Çıkış Gerilimi Testi (ESP32 takılı DEĞİLKEN):**
-  * Sensörleri takın ve elektrotları kola yerleştirin; ESP32 soketi boş kalsın.
-  * Kası **maksimum kuvvetle** kasarken her kanalın `SIG` – `GND` gerilimini ölçün.
-  * Koruma devresinden **sonraki** noktada (ESP soketinin CH pini) okunan değer **3.3V'u geçmemeli** ve **0V'un altına inmemelidir**. Geçiyorsa kazanç potunu düşürün.
-- [ ] **5. -Vs İzolasyon Testi (Buzzer Modu):**
-  * `-Vs` klemensi ile ESP32 soketinin tüm pinleri arasında **süreklilik olmamalıdır.**
+- [ ] **1. Kısa Devre Testi (Multimetre, Buzzer Modu):**
+  * `K+` ↔ `K0`, `K-` ↔ `K0`, `K+` ↔ `K-` → **Ötmemelidir.**
+- [ ] **2. Ortak Toprak Sürekliliği (Buzzer Modu):**
+  * `K0` ↔ her soketin `k0` pini ve `E0` → **Ötmelidir.**
+- [ ] **3. -Vs / +Vs İzolasyonu (Buzzer Modu):**
+  * `K-` ve `K+` ↔ `E0`–`E4` pinlerinin hiçbiri → **Ötmemelidir.**
+- [ ] **4. Bölücü Direnç Kontrolü (Ohm Modu, güç kapalı):**
+  * Her `kS` ↔ `E0`: **~30 kΩ** (10k + 20k)
+  * Her `Ek` ↔ `E0`: **~20 kΩ** (sensör takılı değilken yalnızca alt direnç ölçülür)
+  * Her `kS` ↔ `Ek`: **~10 kΩ**
+- [ ] **5. Voltaj Doğrulama (DC Volt, sensörler takılı değil):**
+  * Siyah prob `K0`'da: her soketin `k+` pininde **+5.0V**, `k-` pininde **-5.0V**.
+- [ ] **6. Çıkış Testi (Osiloskop, ESP32 takılı DEĞİLKEN):**
+  * Sensörleri takın, elektrotları yerleştirin. Prob `Ek` pinine, toprak klipsi `E0`'a (**asla ±Vs'ye değil**).
+  * Ayarlar: DC kuplaj, 1 V/div, 200 ms/div, AUTO tetik.
+  * Maksimum kasılmada tepe değer **≤ 2.5V** (bölücü sonrası) ve en düşük değer **> -0.3V** olmalıdır.
 
-Bu testler tamamlandıktan sonra sensörler ve ESP32 güvenle takılabilir. Breadboard üzerindeki onlarca jumper kablo tek bir kompakt dağıtım modülüne dönüşmüş olur.
+Bu testler tamamlandıktan sonra ESP32 güvenle bağlanabilir.
+
+> **Güvenlik:** Elektrotlar denekteyken ESP32'ye USB ile bağlı laptopu **şarjdan çıkarın** (pil ile çalıştırın).
