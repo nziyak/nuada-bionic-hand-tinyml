@@ -5,19 +5,13 @@ import {
   Color,
   CylinderGeometry,
   DoubleSide,
-  EdgesGeometry,
-  ExtrudeGeometry,
-  Shape,
-  TorusGeometry,
+  Euler,
   Group,
-  LineBasicMaterial,
-  LineSegments,
   Matrix4,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
   Object3D,
-  PlaneGeometry,
   Quaternion,
   SphereGeometry,
   Vector3,
@@ -26,22 +20,20 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FINGER_IDS, type EmgFrame, type FingerId, type FingerValues, type ImuAngles } from '../types/telemetry';
 import { FINGER_SPECS, clamp, type FingerSpec } from './JointLimits';
 import { FingerController } from './FingerController';
-import { emgHue } from '../sensors/VirtualEMG';
 
 const DEG2RAD = Math.PI / 180;
 const ARC_SEGMENTS = 24;
+const SKIN_COLOR = 0xd9a184;
 
 interface JointVisual {
-  indicatorMat: MeshStandardMaterial;
   arcGeo: BufferGeometry;
   arcMesh: Mesh;
   arcMat: MeshBasicMaterial;
 }
 
 interface FingerVisual {
-  segMats: MeshStandardMaterial[];
+  mat: MeshStandardMaterial;
   joints: JointVisual[];
-  tipMat: MeshStandardMaterial | null;
 }
 
 export interface ModelLoadResult {
@@ -49,17 +41,32 @@ export interface ModelLoadResult {
   message: string;
 }
 
+/** Sphere pushed towards a rounded box (exponent < 1 squares the silhouette in X/Y). */
+function superEllipsoid(exponent: number): SphereGeometry {
+  const g = new SphereGeometry(1, 64, 48);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i);
+    const y = p.getY(i);
+    p.setXYZ(i, Math.sign(x) * Math.abs(x) ** exponent, Math.sign(y) * Math.abs(y) ** exponent, p.getZ(i));
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
 /**
- * Hierarchical, fully virtual three-finger hand.
+ * Hierarchical, fully virtual three-finger right hand with an organic (skin-like) look.
  *
- * VirtualHand (root, rotated by IMU about the wrist)
- * ├── Palm
- * ├── Thumb → ThumbBase → ThumbJoint → ThumbTip
- * ├── IndexFinger → IndexMCP → IndexPIP → IndexDIP → IndexTip
- * └── MiddleFinger → MiddleMCP → MiddlePIP → MiddleDIP → MiddleTip
+ * VirtualHand (root)
+ * ├── VirtualForearm (static)
+ * └── WristPivot (rotated by IMU about the wrist)
+ *     ├── Palm (rounded palm, thenar and hypothenar pads)
+ *     ├── Thumb → ThumbBase → ThumbJoint → ThumbTip
+ *     ├── IndexFinger → IndexMCP → IndexPIP → IndexDIP → IndexTip
+ *     └── MiddleFinger → MiddleMCP → MiddlePIP → MiddleDIP → MiddleTip
  *
- * Joints are nested so that each one inherits its parent's rotation, while every
- * joint can still be rotated independently.
+ * Seen from the palm side (+Z) the thumb is on the +X side (right hand). Finger roots
+ * start inside the palm so each finger grows out of the palm surface without a seam.
  */
 export class VirtualHand {
   readonly root = new Group();
@@ -67,12 +74,7 @@ export class VirtualHand {
   readonly pivot = new Group();
   readonly fingers: Record<FingerId, FingerController>;
 
-  private readonly accentMat = new MeshBasicMaterial({ color: 0x7aa2c9 });
-  private readonly cuffMat = new MeshStandardMaterial({ color: 0x1a2533, metalness: 0.8, roughness: 0.3 });
-
-  private readonly palmMat = new MeshStandardMaterial({ color: 0x2b3a4d, metalness: 0.6, roughness: 0.4, emissive: 0x7aa2c9, emissiveIntensity: 0.15 });
-  private readonly palmEdgeMat = new LineBasicMaterial({ color: 0x7aa2c9, transparent: true, opacity: 0.8 });
-  private readonly emgPadMats: MeshBasicMaterial[] = [];
+  private readonly skinMat = new MeshStandardMaterial({ color: SKIN_COLOR, roughness: 0.62, metalness: 0, emissive: 0x000000 });
   private readonly visuals = {} as Record<FingerId, FingerVisual>;
   private readonly proceduralParts: Object3D[] = [];
   private readonly proceduralJoints = {} as Record<FingerId, Object3D[]>;
@@ -96,9 +98,9 @@ export class VirtualHand {
     this.buildArm();
     this.buildPalm();
 
-    const thumb = this.buildFinger(FINGER_SPECS.thumb, new Vector3(-0.55, 0.45, 0.12), 0.6);
-    const index = this.buildFinger(FINGER_SPECS.index, new Vector3(-0.28, 1.6, 0), 0);
-    const middle = this.buildFinger(FINGER_SPECS.middle, new Vector3(0.28, 1.6, 0), 0);
+    const thumb = this.buildFinger(FINGER_SPECS.thumb, new Vector3(0.44, 0.38, 0.08), new Euler(0.35, 0.55, -0.82));
+    const index = this.buildFinger(FINGER_SPECS.index, new Vector3(0.25, 1.45, 0), new Euler());
+    const middle = this.buildFinger(FINGER_SPECS.middle, new Vector3(-0.24, 1.47, 0), new Euler());
     this.pivot.add(thumb.group, index.group, middle.group);
 
     this.proceduralJoints.thumb = thumb.joints;
@@ -118,100 +120,68 @@ export class VirtualHand {
 
   // ───────────────────────── construction ─────────────────────────
 
+  private blob(
+    parent: Object3D,
+    name: string,
+    scale: [number, number, number],
+    pos: [number, number, number],
+    rotZ = 0,
+    geo?: BufferGeometry,
+    mat: MeshStandardMaterial = this.skinMat,
+  ): Mesh {
+    const m = new Mesh(geo ?? new SphereGeometry(1, 48, 32), mat);
+    m.name = name;
+    m.scale.set(...scale);
+    m.position.set(...pos);
+    m.rotation.z = rotZ;
+    parent.add(m);
+    return m;
+  }
+
   private buildPalm(): void {
-    // Anatomical-style outline: narrow wrist widening to the knuckle line, softly rounded.
-    const s = new Shape();
-    s.moveTo(-0.36, 0);
-    s.lineTo(0.36, 0);
-    s.bezierCurveTo(0.5, 0.3, 0.68, 0.8, 0.62, 1.3);
-    s.bezierCurveTo(0.6, 1.58, 0.36, 1.74, 0, 1.74);
-    s.bezierCurveTo(-0.36, 1.74, -0.6, 1.58, -0.62, 1.3);
-    s.bezierCurveTo(-0.68, 0.8, -0.5, 0.3, -0.36, 0);
-    const geo = new ExtrudeGeometry(s, {
-      depth: 0.22,
-      bevelEnabled: true,
-      bevelThickness: 0.1,
-      bevelSize: 0.1,
-      bevelSegments: 6,
-      curveSegments: 24,
-    });
-    geo.translate(0, 0, -0.11);
-    const palm = new Mesh(geo, this.palmMat);
+    const palm = new Group();
     palm.name = 'Palm';
-    const edges = new LineSegments(new EdgesGeometry(geo, 60), this.palmEdgeMat);
-    palm.add(edges);
-
-    // Soft thumb-base (thenar) swelling so the thumb flows out of the palm.
-    const thenar = new Mesh(new SphereGeometry(0.4, 28, 20), this.palmMat);
-    thenar.name = 'PalmThenar';
-    thenar.scale.set(0.85, 1.25, 0.6);
-    thenar.position.set(-0.42, 0.5, 0.04);
-    palm.add(thenar);
-
-    // Digital sEMG heat indicators (flat screens on the virtual palm).
-    const padGeo = new PlaneGeometry(0.15, 0.4);
-    for (let i = 0; i < 4; i++) {
-      const mat = new MeshBasicMaterial({ color: 0x1e5aa8 });
-      const pad = new Mesh(padGeo, mat);
-      pad.position.set(-0.33 + i * 0.22, 0.55, 0.222);
-      pad.name = `EmgIndicator${i + 1}`;
-      palm.add(pad);
-      this.emgPadMats.push(mat);
-    }
-
+    this.blob(palm, 'PalmBody', [0.6, 0.78, 0.24], [0.02, 0.86, 0], 0, superEllipsoid(0.62));
+    this.blob(palm, 'PalmThenar', [0.33, 0.5, 0.24], [0.38, 0.48, 0.05], -0.35);
+    this.blob(palm, 'PalmHypothenar', [0.26, 0.5, 0.2], [-0.36, 0.6, 0.03], 0.1);
+    this.blob(palm, 'PalmHeel', [0.4, 0.3, 0.22], [0, 0.28, 0.01]);
     this.pivot.add(palm);
     this.proceduralParts.push(palm);
   }
 
-  /** Stylised virtual forearm (static, does not rotate with the wrist). */
+  /** Virtual forearm and wrist (static, does not rotate with the wrist). */
   private buildArm(): void {
     const arm = new Group();
     arm.name = 'VirtualForearm';
-    const body = new Mesh(new CylinderGeometry(0.46, 0.62, 3.2, 40, 1), this.palmMat);
-    body.position.y = -0.1 - 1.6;
-    arm.add(body);
-    // Accent rings (digital display bands).
-    for (const [y, r] of [[-0.35, 0.49], [-1.2, 0.54], [-2.1, 0.59]] as const) {
-      const ring = new Mesh(new TorusGeometry(r, 0.025, 10, 48), this.accentMat);
-      ring.rotation.x = Math.PI / 2;
-      ring.position.y = y;
-      arm.add(ring);
-    }
-    // Wrist joint cuff.
-    const cuff = new Mesh(new CylinderGeometry(0.5, 0.5, 0.16, 40), this.cuffMat);
-    cuff.position.y = -0.04;
-    arm.add(cuff);
+    const forearm = new Mesh(new CylinderGeometry(0.43, 0.55, 2.2, 48, 1), this.skinMat);
+    forearm.name = 'Forearm';
+    forearm.scale.z = 0.72;
+    forearm.position.y = -1.25;
+    arm.add(forearm);
+    const wrist = new Mesh(new CylinderGeometry(0.4, 0.44, 0.5, 48, 1, true), this.skinMat);
+    wrist.name = 'Wrist';
+    wrist.scale.z = 0.68;
+    wrist.position.y = 0.05;
+    arm.add(wrist);
+    this.blob(arm, 'WristBlend', [0.43, 0.25, 0.3], [0, -0.18, 0]);
     this.root.add(arm);
     this.proceduralParts.push(arm);
   }
 
-  private buildFinger(
-    spec: FingerSpec,
-    origin: Vector3,
-    baseRotZ: number,
-  ): { group: Group; joints: Object3D[] } {
+  private buildFinger(spec: FingerSpec, origin: Vector3, baseRot: Euler): { group: Group; joints: Object3D[] } {
     const group = new Group();
     group.name = spec.groupName;
     group.position.copy(origin);
-    group.rotation.z = baseRotZ;
+    group.rotation.copy(baseRot);
 
-    // Smooth flared sleeve blending the finger root into the palm (no stick-on look).
-    const rb = spec.segmentRadius;
-    const blend = new Mesh(new CylinderGeometry(rb * 1.02, rb * 1.5, 0.55, 28, 1), this.palmMat);
-    blend.name = `${spec.groupName}_Blend`;
-    blend.scale.z = 0.85;
-    blend.position.y = -0.22;
-    group.add(blend);
-
-    const segMats: MeshStandardMaterial[] = [];
+    const mat = this.skinMat.clone();
     const jointVisuals: JointVisual[] = [];
     const joints: Object3D[] = [];
     const arcMatrix = new Matrix4().makeBasis(new Vector3(0, 1, 0), new Vector3(0, 0, 1), new Vector3(1, 0, 0));
-    const tones = [0.34, 0.42, 0.52];
-    const jointGeo = new SphereGeometry(spec.segmentRadius * 0.72, 20, 14);
-    const arcOffsetX = spec.segmentRadius + 0.06;
+    const arcOffsetX = spec.segmentRadius + 0.08;
 
     let parent: Object3D = group;
+    let rad = spec.segmentRadius;
     spec.joints.forEach((limit, i) => {
       const joint = new Group();
       joint.name = limit.name;
@@ -221,59 +191,43 @@ export class VirtualHand {
       joints.push(joint);
 
       const segLen = spec.segmentLengths[i];
-      const color = new Color().setHSL(spec.hue, 0.55, tones[i % tones.length]);
-      const segMat = new MeshStandardMaterial({ color, metalness: 0.55, roughness: 0.38, emissive: color, emissiveIntensity: 0.08 });
-      segMats.push(segMat);
-      // Tapered, slightly flattened segment with a visible gap at the joint (technical, not sausage-like).
-      const rBase = spec.segmentRadius * (1 - 0.1 * i);
-      const rTop = rBase * 0.82;
-      const bodyLen = segLen * 0.88;
-      const seg = new Mesh(new CylinderGeometry(rTop, rBase, bodyLen, 20, 1), segMat);
+      const rTop = rad * 0.92;
+      // Knuckle sphere matches the segment radius so joints stay flush (no bulge).
+      this.blob(joint, `${limit.name}_Knuckle`, [rad, rad, rad * 0.9], [0, 0, 0], 0, undefined, mat);
+      // The first segment widens slightly at its root, which sits inside the palm.
+      const rBase = i === 0 ? rad * 1.12 : rad;
+      const seg = new Mesh(new CylinderGeometry(rTop, rBase, segLen, 40, 1, true), mat);
       seg.name = `${limit.name}_Segment`;
-      seg.scale.z = 0.85;
-      seg.position.y = segLen * 0.06 + bodyLen / 2;
+      seg.scale.z = 0.9;
+      seg.position.y = segLen / 2;
       joint.add(seg);
       if (i === spec.joints.length - 1) {
-        const cap = new Mesh(new SphereGeometry(rTop, 20, 14), segMat);
-        cap.name = `${limit.name}_Pad`;
-        cap.scale.z = 0.85;
-        cap.position.y = segLen * 0.06 + bodyLen;
-        joint.add(cap);
+        this.blob(joint, `${limit.name}_Pad`, [rTop, rTop * 1.15, rTop * 0.9], [0, segLen, 0], 0, undefined, mat);
       }
-
-      const indicatorMat = new MeshStandardMaterial({ color: 0x10202e, metalness: 0.2, roughness: 0.3, emissive: 0x33ff99, emissiveIntensity: 0.5 });
-      const indicator = new Mesh(jointGeo, indicatorMat);
-      indicator.name = `${limit.name}_Indicator`;
-      joint.add(indicator);
 
       // Angle arc, drawn in the parent's frame so it spans parent-segment → current direction.
       const arcGeo = new CircleGeometry(0.3, ARC_SEGMENTS, 0, limit.maxDeg * DEG2RAD);
       arcGeo.applyMatrix4(arcMatrix);
-      const arcMat = new MeshBasicMaterial({ color: 0x33ff99, transparent: true, opacity: 0.55, side: DoubleSide, depthWrite: false });
+      const arcMat = new MeshBasicMaterial({ color: 0x33ff99, transparent: true, opacity: 0.45, side: DoubleSide, depthWrite: false });
       const arcMesh = new Mesh(arcGeo, arcMat);
       arcMesh.name = `${limit.name}_AngleArc`;
       arcMesh.position.set(arcOffsetX, prevLen, 0);
       arcMesh.visible = false;
       parent.add(arcMesh);
-      jointVisuals.push({ indicatorMat, arcGeo, arcMesh, arcMat });
+      jointVisuals.push({ arcGeo, arcMesh, arcMat });
 
       parent = joint;
+      rad = rTop;
     });
 
-    let tipMat: MeshStandardMaterial | null = null;
     if (spec.tipNodeName) {
       const tip = new Group();
       tip.name = spec.tipNodeName;
       tip.position.y = spec.segmentLengths[spec.segmentLengths.length - 1];
       parent.add(tip);
-      tipMat = new MeshStandardMaterial({ color: 0x10202e, emissive: new Color().setHSL(spec.hue, 0.9, 0.6), emissiveIntensity: 0.4 });
-      const tipMesh = new Mesh(new SphereGeometry(spec.segmentRadius * 0.75, 16, 12), tipMat);
-      tipMesh.name = `${spec.tipNodeName}_Marker`;
-      tipMesh.position.y = spec.segmentRadius * 0.6;
-      tip.add(tipMesh);
     }
 
-    this.visuals[spec.id] = { segMats, joints: jointVisuals, tipMat };
+    this.visuals[spec.id] = { mat, joints: jointVisuals };
     this.proceduralParts.push(group);
     return { group, joints };
   }
@@ -306,31 +260,25 @@ export class VirtualHand {
 
   setEmg(frame: EmgFrame): void {
     let sum = 0;
-    for (let i = 0; i < 4; i++) {
-      this.emgPadMats[i].color.setHSL(emgHue(frame[i]), 0.85, 0.28 + frame[i] * 0.3);
-      sum += frame[i];
-    }
+    for (let i = 0; i < 4; i++) sum += frame[i];
     this.emgMean = sum / 4;
   }
 
   update(dt: number): void {
     this.accent.lerp(this.accentTarget, 1 - Math.exp(-6 * dt));
-    this.palmMat.emissive.copy(this.accent);
-    this.palmMat.emissiveIntensity = 0.12 + this.emgMean * 0.5;
-    this.palmEdgeMat.color.copy(this.accent);
-    this.accentMat.color.copy(this.accent);
+    // Subtle activity tint on the skin; a strong glow would break the organic look.
+    this.skinMat.emissive.copy(this.accent);
+    this.skinMat.emissiveIntensity = this.emgMean * 0.08;
 
     for (const id of FINGER_IDS) {
       const fc = this.fingers[id];
       fc.update(dt, this.emgMean);
       const vis = this.visuals[id];
-      for (const m of vis.segMats) m.emissiveIntensity = 0.06 + fc.glow * 1.0;
-      if (vis.tipMat) vis.tipMat.emissiveIntensity = 0.3 + fc.glow * 1.5;
+      vis.mat.emissive.copy(this.accent);
+      vis.mat.emissiveIntensity = fc.glow * 0.12;
       fc.spec.joints.forEach((limit, i) => {
         const jv = vis.joints[i];
         const frac = clamp((fc.jointAngles[i] - limit.minDeg) / (limit.maxDeg - limit.minDeg), 0, 1);
-        jv.indicatorMat.emissive.setHSL(0.38 * (1 - frac), 0.95, 0.5);
-        jv.indicatorMat.emissiveIntensity = 0.45 + frac * 0.9;
         jv.arcMat.color.setHSL(0.38 * (1 - frac), 0.95, 0.55);
         const count = Math.ceil(frac * ARC_SEGMENTS) * 3;
         jv.arcMesh.visible = count > 0 && this.glbRoot === null;

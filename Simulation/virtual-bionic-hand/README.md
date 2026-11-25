@@ -120,6 +120,8 @@ targets move; below 0.2 the packet is ignored for motion.
 **Load GLB rig** (or `?model=/path/hand.glb`) binds a GLB if it contains nodes named
 `ThumbBase, ThumbJoint, ThumbTip, IndexMCP, IndexPIP, IndexDIP, MiddleMCP, MiddlePIP, MiddleDIP`.
 Their rest orientation is kept and flexion is applied on top, with the same limits. Missing nodes → model ignored.
+The built-in model is a **right hand** (thumb on +X seen from the palm side, +Z); flexion is about each joint's local X axis,
+and the thumb uses an oblique axis tilted towards +Z (`[1, 0, 1.1]`). Build GLB rigs with the same orientation.
 
 ## Performance notes
 Shared geometries, no per-frame allocations in the hot path, DOM updates throttled to 10 Hz, chart redraw ≤ 30 Hz,
