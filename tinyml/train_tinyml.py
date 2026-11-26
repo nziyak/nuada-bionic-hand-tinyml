@@ -120,9 +120,9 @@ def generate_mock_dataset(num_samples_per_class: int = 150) -> Tuple[Any, Any, A
     return x_emg, x_imu, y
 
 
-def load_csv_dataset(dataset_dir: str) -> Tuple[Any, Any, Any]:
+def load_csv_dataset(dataset_dir: str, max_files: int = 8) -> Tuple[Any, Any, Any]:
     """
-    data/ klasöründeki CSV kayıtlarını okur ve pencerelere ayırır.
+    data/ klasöründeki CSV veya TXT (UCI formatı) kayıtlarını okur ve pencerelere ayırır.
     """
     if not HAS_NUMPY:
         raise RuntimeError("NumPy kütüphanesi gereklidir.")
@@ -130,37 +130,55 @@ def load_csv_dataset(dataset_dir: str) -> Tuple[Any, Any, Any]:
     import glob
     import pandas as pd
 
-    csv_files = glob.glob(os.path.join(dataset_dir, "**/*.csv"), recursive=True)
-    if not csv_files:
-        raise FileNotFoundError(f"'{dataset_dir}' dizininde hiçbir .csv dosyası bulunamadı!")
+    # Hem .csv hem .txt dosyalarını ara
+    all_files = glob.glob(os.path.join(dataset_dir, "**/*.csv"), recursive=True) + \
+                glob.glob(os.path.join(dataset_dir, "**/*.txt"), recursive=True)
+    # temp_repo veya README gibi gereksiz dosyaları hariç tut
+    files = [f for f in all_files if "temp_repo" not in f and "readme" not in f.lower()][:max_files]
 
-    print(f"[DATA] {len(csv_files)} adet CSV dosyası bulundu, okunuyor...")
+    if not files:
+        raise FileNotFoundError(f"'{dataset_dir}' dizininde hiçbir .csv veya .txt veri dosyası bulunamadı!")
+
+    print(f"[DATA] {len(files)} adet veri dosyası işleniyor (Hızlı eğitim için sınır: {max_files})...")
     all_emg_windows = []
     all_imu_windows = []
     all_labels = []
 
-    for fpath in csv_files:
-        df = pd.read_csv(fpath)
-        # Sütun kontrolü (emg1..emg4, ax, ay, az, label)
-        emg_cols = [c for c in df.columns if "emg" in c.lower() or "ch" in c.lower()][:4]
-        imu_cols = [c for c in df.columns if any(k in c.lower() for k in ["ax", "ay", "az", "acc"])][:3]
-        label_col = [c for c in df.columns if "label" in c.lower() or "class" in c.lower()]
+    for fpath in files:
+        try:
+            # Hem virgülle hem tab/boşlukla ayrılmış dosyaları otomatik tanı
+            df = pd.read_csv(fpath, sep=r'[\s,]+', engine='python')
+        except Exception as e:
+            continue
 
-        if not emg_cols or not label_col:
+        # Sütun kontrolü (emg1..emg4, channel1..channel4, ax, ay, az, label/class)
+        emg_cols = [c for c in df.columns if any(k in c.lower() for k in ["emg", "ch", "channel"])][:4]
+        imu_cols = [c for c in df.columns if any(k in c.lower() for k in ["ax", "ay", "az", "acc"])][:3]
+        label_cols = [c for c in df.columns if any(k in c.lower() for k in ["label", "class", "target"])]
+
+        if not emg_cols or not label_cols:
             continue
 
         raw_emg = df[emg_cols].values
-        raw_imu = df[imu_cols].values if len(imu_cols) == 3 else np.zeros((len(df), 3))
-        raw_labels = df[label_col[0]].values
+        raw_imu = df[imu_cols].values if len(imu_cols) == 3 else np.zeros((len(df), 3), dtype=np.float32)
+        raw_labels = df[label_cols[0]].values
 
-        # Kayan pencereleme (20 örnek pencere, 5 örnek adım)
-        for i in range(0, len(df) - 20, 5):
-            emg_win = raw_emg[i:i+20]
-            imu_win = raw_imu[i:i+20]
-            lbl = int(raw_labels[i+10])  # Ortanca etiketi al
-            all_emg_windows.append(emg_win)
-            all_imu_windows.append(imu_win)
+        # Kayan pencereleme (20 örnek pencere = 200 ms, 5 örnek adım = 50 ms)
+        for i in range(0, len(df) - 20, 10):
+            lbl = int(raw_labels[i + 10])
+            # Sadece 0-4 arası sınıfları al (veya 1-5'i 0-4'e eşle)
+            if lbl not in [0, 1, 2, 3, 4]:
+                if lbl in [5, 6, 7]:
+                    lbl = 4
+                else:
+                    continue
+
+            all_emg_windows.append(raw_emg[i:i + 20])
+            all_imu_windows.append(raw_imu[i:i + 20])
             all_labels.append(lbl)
+
+    if not all_emg_windows:
+        raise ValueError(f"'{dataset_dir}' içindeki dosyalardan geçerli veri penceresi çıkarılamadı!")
 
     return np.array(all_emg_windows, dtype=np.float32), np.array(all_imu_windows, dtype=np.float32), np.array(all_labels, dtype=np.int32)
 
