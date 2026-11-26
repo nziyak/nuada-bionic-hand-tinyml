@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 """
 Nuada TinyML - End-to-End Training & INT8 Quantization Pipeline
 Author: Nuri Ziya Kırtepe
@@ -26,7 +27,7 @@ import sys
 import math
 import random
 import argparse
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 # Nuada modülleri
 from features import extract_window_features, generate_sliding_windows
@@ -36,6 +37,7 @@ try:
     HAS_NUMPY = True
 except ImportError:
     HAS_NUMPY = False
+    np = None
 
 try:
     import tensorflow as tf
@@ -43,6 +45,7 @@ try:
     HAS_TF = True
 except ImportError:
     HAS_TF = False
+    tf = None
 
 
 GESTURE_CLASSES = {
@@ -58,7 +61,7 @@ GESTURE_CLASSES = {
 # 1. SENTETİK (MOCK) VE GERÇEK VERİ YÜKLEYİCİ
 # ==============================================================================
 
-def generate_mock_dataset(num_samples_per_class: int = 150) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def generate_mock_dataset(num_samples_per_class: int = 150) -> Tuple[Any, Any, Any]:
     """
     Donanım hazır olmadan veya test amacıyla fizyolojik kas aktivasyonlarına
     uygun sentetik 4-kanallı EMG ve 3-eksenli IMU verisi üretir.
@@ -117,7 +120,7 @@ def generate_mock_dataset(num_samples_per_class: int = 150) -> Tuple[np.ndarray,
     return x_emg, x_imu, y
 
 
-def load_csv_dataset(dataset_dir: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def load_csv_dataset(dataset_dir: str) -> Tuple[Any, Any, Any]:
     """
     data/ klasöründeki CSV kayıtlarını okur ve pencerelere ayırır.
     """
@@ -217,7 +220,18 @@ const unsigned int g_{model_name}_len = {len(tflite_bytes)};
 
 def run_pipeline(args):
     if not HAS_TF or not HAS_NUMPY:
-        print("[HATA] TensorFlow veya NumPy eksik! Lütfen 'pip install -r requirements.txt' çalıştırın.")
+        print("\n" + "="*70)
+        print("  [BILGI] Gerekli Python kutuphaneleri (numpy, tensorflow) henuz yuklu degil!")
+        print("="*70)
+        print("  train_tinyml.py derin ogrenme modelini egitmek ve INT8 kuantalama")
+        print("  yapmak icin TensorFlow ve NumPy kutuphanelerine ihtiyac duyar.")
+        print("\n  Cozum (Sanal ortami kurun veya aktif edin):")
+        print("    cd /home/zia/Documents/school/graduation-project/nuada/nuada-bionic-hand-tinyml/tinyml")
+        print("    python3 -m venv venv")
+        print("    source venv/bin/activate")
+        print("    pip install -r requirements.txt")
+        print("    python3 train_tinyml.py --mock --model_type mlp --epochs 15 --quantize --output_header model_data.h")
+        print("="*70 + "\n")
         sys.exit(1)
 
     print("==================================================================")
