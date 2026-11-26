@@ -117,10 +117,11 @@ def generate_mock_dataset(num_samples_per_class: int = 150) -> Tuple[Any, Any, A
     x_emg = np.array(x_emg_list, dtype=np.float32)
     x_imu = np.array(x_imu_list, dtype=np.float32)
     y = np.array(y_list, dtype=np.int32)
-    return x_emg, x_imu, y
+    subjects = np.array(["mock"] * len(y))
+    return x_emg, x_imu, y, subjects
 
 
-def load_csv_dataset(dataset_dir: str, max_files: int = 8) -> Tuple[Any, Any, Any]:
+def load_csv_dataset(dataset_dir: str, max_files: int = 16) -> Tuple[Any, Any, Any, Any]:
     """
     data/ klasöründeki CSV veya TXT (UCI formatı) kayıtlarını okur ve pencerelere ayırır.
     """
@@ -130,9 +131,9 @@ def load_csv_dataset(dataset_dir: str, max_files: int = 8) -> Tuple[Any, Any, An
     import glob
     import pandas as pd
 
-    # Hem .csv hem .txt dosyalarını ara
-    all_files = glob.glob(os.path.join(dataset_dir, "**/*.csv"), recursive=True) + \
-                glob.glob(os.path.join(dataset_dir, "**/*.txt"), recursive=True)
+    # Hem .csv hem .txt dosyalarını ara ve alfabetik sırala
+    all_files = sorted(glob.glob(os.path.join(dataset_dir, "**/*.csv"), recursive=True) + \
+                       glob.glob(os.path.join(dataset_dir, "**/*.txt"), recursive=True))
     # temp_repo veya README gibi gereksiz dosyaları hariç tut
     files = [f for f in all_files if "temp_repo" not in f and "readme" not in f.lower()][:max_files]
 
@@ -143,6 +144,7 @@ def load_csv_dataset(dataset_dir: str, max_files: int = 8) -> Tuple[Any, Any, An
     all_emg_windows = []
     all_imu_windows = []
     all_labels = []
+    all_subjects = []
 
     for fpath in files:
         try:
@@ -150,6 +152,8 @@ def load_csv_dataset(dataset_dir: str, max_files: int = 8) -> Tuple[Any, Any, An
             df = pd.read_csv(fpath, sep=r'[\s,]+', engine='python')
         except Exception as e:
             continue
+
+        subject_id = os.path.basename(os.path.dirname(fpath))
 
         # Sütun kontrolü (emg1..emg4, channel1..channel4, ax, ay, az, label/class)
         emg_cols = [c for c in df.columns if any(k in c.lower() for k in ["emg", "ch", "channel"])][:4]
@@ -186,11 +190,12 @@ def load_csv_dataset(dataset_dir: str, max_files: int = 8) -> Tuple[Any, Any, An
             all_emg_windows.append(raw_emg[i:i + 20])
             all_imu_windows.append(raw_imu[i:i + 20])
             all_labels.append(lbl)
+            all_subjects.append(subject_id)
 
     if not all_emg_windows:
         raise ValueError(f"'{dataset_dir}' içindeki dosyalardan geçerli veri penceresi çıkarılamadı!")
 
-    return np.array(all_emg_windows, dtype=np.float32), np.array(all_imu_windows, dtype=np.float32), np.array(all_labels, dtype=np.int32)
+    return np.array(all_emg_windows, dtype=np.float32), np.array(all_imu_windows, dtype=np.float32), np.array(all_labels, dtype=np.int32), np.array(all_subjects)
 
 
 # ==============================================================================
@@ -272,9 +277,9 @@ def run_pipeline(args):
 
     # 1. Veri Yükleme
     if args.mock or not args.dataset_dir:
-        x_emg, x_imu, y = generate_mock_dataset(num_samples_per_class=args.samples_per_class)
+        x_emg, x_imu, y, subjects = generate_mock_dataset(num_samples_per_class=args.samples_per_class)
     else:
-        x_emg, x_imu, y = load_csv_dataset(args.dataset_dir)
+        x_emg, x_imu, y, subjects = load_csv_dataset(args.dataset_dir)
 
     unique, counts = np.unique(y, return_counts=True)
     dist_str = ", ".join([f"{GESTURE_CLASSES.get(u, str(u)).split(' ')[0]}: {c}" for u, c in zip(unique, counts)])
@@ -299,13 +304,32 @@ def run_pipeline(args):
         print(f"[ISLEM] 1D-CNN Giriş Boyutu: {X.shape}")
         model = build_1d_cnn(input_shape=(20, 4), num_classes=5)
 
-    # 3. Train / Test Ayrımı (%80 Eğitim, %20 Doğrulama)
-    indices = np.arange(len(y))
-    np.random.seed(42)
-    np.random.shuffle(indices)
-    split_idx = int(0.8 * len(y))
+    # 3. Train / Test Ayrımı
+    if args.split_strategy == "loso":
+        target_subj = str(args.test_subject).zfill(2)
+        test_idx = np.where(subjects == target_subj)[0]
+        train_idx = np.where(subjects != target_subj)[0]
 
-    train_idx, test_idx = indices[:split_idx], indices[split_idx:]
+        if len(test_idx) == 0:
+            print(f"[UYARI] '{target_subj}' denek ID'si yüklenen verilerde bulunamadı (Mevcut denekler: {list(set(subjects))}). Rastgele %80/%20 ayrımına dönülüyor.")
+            indices = np.arange(len(y))
+            np.random.seed(42)
+            np.random.shuffle(indices)
+            split_idx = int(0.8 * len(y))
+            train_idx, test_idx = indices[:split_idx], indices[split_idx:]
+        else:
+            print(f"[SPLIT] LOSO (Leave-One-Subject-Out) Çapraz Doğrulama:")
+            print(f"        -> Test Deneği (Dışarıda Bırakılan) : Subject {target_subj} ({len(test_idx)} test penceresi)")
+            print(f"        -> Eğitim Denekleri                  : {len(set(subjects[train_idx]))} denek ({len(train_idx)} eğitim penceresi)")
+    else:
+        # Rastgele pencere bazlı %80 Eğitim, %20 Test
+        indices = np.arange(len(y))
+        np.random.seed(42)
+        np.random.shuffle(indices)
+        split_idx = int(0.8 * len(y))
+        train_idx, test_idx = indices[:split_idx], indices[split_idx:]
+        print(f"[SPLIT] Rastgele Ayrım: %80 Eğitim ({len(train_idx)} pencere) / %20 Test ({len(test_idx)} pencere)")
+
     X_train, y_train = X[train_idx], y[train_idx]
     X_test, y_test = X[test_idx], y[test_idx]
 
@@ -402,6 +426,10 @@ if __name__ == "__main__":
                         help="Gerçek veri yoksa sentetik fizyolojik veri üret")
     parser.add_argument("--samples_per_class", type=int, default=150,
                         help="Mock modunda sınıf başına üretilecek pencere sayısı")
+    parser.add_argument("--split_strategy", type=str, choices=["random", "loso"], default="random",
+                        help="Veri ayırma stratejisi: 'random' (pencere bazlı %80/%20) veya 'loso' (Leave-One-Subject-Out)")
+    parser.add_argument("--test_subject", type=str, default="01",
+                        help="LOSO stratejisinde test için tamamen dışarıda bırakılacak denek ID'si (ör. '01', '02')")
 
     cli_args = parser.parse_args()
     run_pipeline(cli_args)
