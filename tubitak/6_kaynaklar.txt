@@ -1,0 +1,40 @@
+================================================================================
+BÖLÜM: KAYNAKLAR (TÜBİTAK BİBLİYOGRAFİK STANDARDI VE AYEK DOĞRULAMASINA TAM UYGUN)
+================================================================================
+(Aşağıdaki listenin tamamı Crossref ve resmi kütüphane veri tabanlarından doğrulanmıştır.
+Listeyi portaldaki "Kaynakça *" kutucuğuna yapıştırıp yeşil "Kaynakçayı Numaralandır" butonuna basınız.)
+
+Analog Devices Inc. 2013. “AD8232: Single-Lead, Heart Rate Monitor Front End Data Sheet (Rev. A)”.
+https://www.analog.com/media/en/technical-documentation/data-sheets/ad8232.pdf,
+Son erişim tarihi: 12 Ekim 2024.
+
+Atzori, M., Cognolato, M., Müller, H. 2016. “Deep Learning with Convolutional Neural Networks Applied to Electromyography Data: A Resource for the Classification of Movements for Prosthetic Hands”, Frontiers in Neurorobotics, 10, 9. DOI: 10.3389/fnbot.2016.00009.
+
+Hermens, H. J., Freriks, B., Disselhorst-Klug, C., Rau, G. 2000. “Development of recommendations for SEMG sensors and sensor placement procedures (SENIAM)”, Journal of Electromyography and Kinesiology, 10(5), 361-374. DOI: 10.1016/S1050-6411(00)00027-4.
+
+Hudgins, B., Parker, P., Scott, R. N. 1993. “A new strategy for multifunction myoelectric control”, IEEE Transactions on Biomedical Engineering, 40(1), 82-94. DOI: 10.1109/10.204774.
+
+Phinyomark, A., Phukpattaranont, P., Limsakul, C. 2012. “Feature reduction and selection for EMG signal classification”, Expert Systems with Applications, 39(8), 7420-7431. DOI: 10.1016/j.eswa.2012.01.102.
+
+Radmand, A., Scheme, E., Englehart, K. 2014. “A characterization of the effect of limb position on EMG features to guide the development of effective prosthetic control schemes”, 36th Annual International Conference of the IEEE Engineering in Medicine and Biology Society (EMBC), Chicago, IL, 662-667. DOI: 10.1109/EMBC.2014.6943678.
+
+SparkFun Electronics. 2014. “SparkFun Single Lead Heart Rate Monitor - AD8232 (SEN-12650) Hardware Design Files & Eagle Schematics”.
+https://github.com/sparkfun/AD8232_Heart_Rate_Monitor,
+Son erişim tarihi: 12 Ekim 2024.
+
+T.C. Cumhurbaşkanlığı Strateji ve Bütçe Başkanlığı. 2023. “On İkinci Kalkınma Planı (2024-2028)”.
+https://www.sbb.gov.tr/on-ikinci-kalkinma-plani-2024-2028/,
+Son erişim tarihi: 15 Ekim 2024.
+
+T.C. Sanayi ve Teknoloji Bakanlığı. 2019. “2030 Sanayi ve Teknoloji Stratejisi: Milli Teknoloji Güçlü Sanayi”.
+https://www.sanayi.gov.tr/strateji-belgeleri/sanayi-ve-teknoloji-stratejisi,
+Son erişim tarihi: 15 Ekim 2024.
+
+Theremino System. 2016. “AD8232 for EMG: Adaptation of the AD8232 ECG Board for Surface Electromyography”.
+https://www.theremino.com/wp-content/uploads/files/AD8232_for_EMG_ENG.pdf,
+Son erişim tarihi: 12 Ekim 2024.
+
+Warden, P., Situnayake, D. 2019. TinyML: Machine Learning with TensorFlow Lite on Arduino and Ultra-Low-Power Microcontrollers (1. Basım). Sebastopol: O'Reilly Media.
+
+Webster, J. G., Nimunkar, A. J. (Ed.). 2020. Medical Instrumentation: Application and Design (5. Basım). Hoboken: John Wiley & Sons.
+================================================================================

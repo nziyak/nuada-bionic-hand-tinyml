@@ -1,0 +1,48 @@
+================================================================================
+BÖLÜM 3.2. RİSK YÖNETİMİ ("+ EKLE" İLE SATIR SATIR EKLEME)
+================================================================================
+(Kırmızı "+ Ekle" butonuna basarak her bir riski ayrı bir satır olarak ekleyiniz)
+
+
+--------------------------------------------------------------------------------
+[1. SATIR]
+--------------------------------------------------------------------------------
+• En Önemli Riskler *:
+1. Donanımsal Modifikasyon ve Lehimleme Hasarı (Orta Risk): AD8232 analog filtre kapasitörlerinin (C1/C3) değişimi sırasında 0603 boyutundaki hassas SMD yolların kalkması veya aşırı ısı nedeniyle entegrenin termal hasar görmesi riski.
+
+• Alınacak Tedbirler (B Planı) *:
+B Planı 1 (Kademeli Donanım Güvencesi): 
+a) Proje bütçesinde yedek AD8232 modülleri ayrılmıştır. Hassas 0603 SMD yerine montajı kolay ve dayanıklı bacaklı mercimek kondansatörler ile GTÜ MTA atölyesindeki sıcak hava istasyonu ve mikroskop kullanılacaktır.
+b) Manuel lehimlemede zorluk yaşanması halinde,profesyonel lehimleme servislerinden hassas komponent değişimi desteği alınacaktır.
+c) Modifikasyonun yetersiz kalması durumunda, açık kaynak Eagle şemaları üzerinden filtre değerleri doğrudan 16–410 Hz sEMG bandına göre özelleştirilmiş 4 kanallı tek bir entegre PCB kartı tasarlanarak GTÜ MTA'daki PCB üretim/kazıma imkânlarıyla (veya hızlı prototip PCB baskı hizmetiyle) özel olarak üretilecektir.
+
+
+--------------------------------------------------------------------------------
+[2. SATIR]
+--------------------------------------------------------------------------------
+• En Önemli Riskler *:
+2. Çok Kanallı ADC Örneklemesinde Gürültü ve Çapraz Karışma (Düşük Risk): ESP32-S3 üzerinde 2000 Hz hızında 4 kanal DMA ADC okuması yapılırken kanallar arası çapraz karışma (crosstalk) veya Wi-Fi RF paraziti oluşması riski.
+
+• Alınacak Tedbirler (B Planı) *:
+B Planı 2 (Gürültü ve İzolasyon): RF girişiminden bağımsız çalışan ADC1 kanalları (GPIO 1-4) seçilmiştir. Gerekmesi durumunda, mimarimizde hazır bulunan SPI arayüzlü 8 kanallı 200 kSPS harici MCP3008 ADC devresi devreye alınacaktır.
+
+
+--------------------------------------------------------------------------------
+[3. SATIR]
+--------------------------------------------------------------------------------
+• En Önemli Riskler *:
+3. Uç Cihaz Bellek ve Çıkarım Gecikmesi Aşımı (Düşük Risk): Eğitilen TinyML modellerinin (özellikle hesaplama yoğun 1D-CNN ve MLP'nin) ESP32-S3'ün kısıtlı SRAM/Flash kapasitesine sığmaması veya çıkarım süresinin 50 ms hedefini aşması riski.
+
+• Alınacak Tedbirler (B Planı) *:
+B Planı 3 (Kademeli Model Mimarisi ve Optimizasyon): Modeller INT8 post-training kuantizasyonu ve ağırlık budama (pruning) ile küçültülecektir. Derin öğrenme modellerinde (1D-CNN / MLP) limitlerin zorlanması durumunda, 2. hatta hazır bulunan ve mikrosaniyeler mertebesinde koşan optimize edilmiş C tabanlı gömülü SVM (emlearn) veya kompakt MLP modeli birincil çıkarım motoru olarak devreye sokulacaktır.
+
+
+--------------------------------------------------------------------------------
+[4. SATIR]
+--------------------------------------------------------------------------------
+• En Önemli Riskler *:
+4. Kol Pozisyonu Değişiminde Sınıflandırma Başarımının Düşmesi (Orta Risk): Kolun uzaysal açısı değiştikçe (-45°, 0°, +45°) kas geometrisinin değişmesi nedeniyle modelde kovaryans kayması (domain shift) yaşanması riski.
+
+• Alınacak Tedbirler (B Planı) *:
+B Planı 4 (Kinematik Füzyon): MPU-6050 IMU'dan okunan 3 eksen açı verileri öznitelik tensörüne dahil edilecek; farklı açılarda veri artırımı (data augmentation) yapılarak model çeşitlendirilecektir.
+================================================================================

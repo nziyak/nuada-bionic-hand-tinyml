@@ -138,7 +138,9 @@ nuada-bionic-hand-tinyml/
 │   │   └── datasheets/                          # Manufacturer datasheets & bus timing calculations
 │   ├── images/                             # Schematics, board layouts & physical hardware photos
 │   ├── presentations/                      # Official project proposal & final presentations
+│   ├── articles/                           # Foundational peer-reviewed academic papers (Hudgins 1993, Fougner 2011)
 │   └── archive/                            # Historical transcripts & initial scratch lab notes
+├── tubitak/                                # TÜBİTAK 2209-A grant proposal texts & application documentation
 ├── firmware/                               # ESP32-S3 C++ firmware (PlatformIO)
 ├── tinyml/                                 # Deep TinyML, 1D-CNN/MLP, INT8 quantization & Core 1 deployment (Ziya)
 ├── scripts/                                # Python multi-angle acquisition, visualizer & tools

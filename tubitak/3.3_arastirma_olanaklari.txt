@@ -1,0 +1,45 @@
+================================================================================
+BÖLÜM 3.3. ARAŞTIRMA OLANAKLARI ("+ EKLE" İLE SATIR SATIR EKLEME)
+================================================================================
+(Kırmızı "+ Ekle" butonuna basarak her seferinde aşağıdaki satırları ekleyiniz)
+
+
+--------------------------------------------------------------------------------
+[1. SATIR]
+--------------------------------------------------------------------------------
+• Kuruluşta Bulunan Altyapı/Ekipman Türü - Modeli (Laboratuvar- Araç- Makine-Teçhizat vb.) *:
+GTÜ Millî Teknoloji Atölyesi (MTA) - Sayısal Depolamalı Osiloskoplar, Dijital Multimetreler ve Ayarlı DC Güç Kaynakları
+
+• Projede Kullanım Amacı *:
+AD8232 modüllerinin 16–410 Hz analog bant genişliği modifikasyonunun doğrulanması, filtre geçiş frekansı analizi, devre gürültü seviyelerinin incelenmesi ve ESP32-S3 dahili 12-bit ADC'sinin 2000 Hz sürekli DMA örnekleme zamanlamasının osiloskop ile test edilmesi amacıyla kullanılacaktır.
+
+
+--------------------------------------------------------------------------------
+[2. SATIR]
+--------------------------------------------------------------------------------
+• Kuruluşta Bulunan Altyapı/Ekipman Türü - Modeli (Laboratuvar- Araç- Makine-Teçhizat vb.) *:
+GTÜ Millî Teknoloji Atölyesi (MTA) - Sıcaklık Ayarlı Lehimleme Havyaları, Sıcak Hava Üflemeli Lehim Sökme İstasyonları, Büyüteçli Mikroskop ve Dijital LCR Metre
+
+• Projede Kullanım Amacı *:
+AD8232 kartları üzerindeki hassas Sallen-Key filtre kapasitörlerinin (C1 ve C3) sökülüp yerlerine yeni değerdeki kondansatörlerin lehimlenmesi, pasif eleman toleranslarının LCR metre ile doğrulanması ve ön kol elektrot kablolama montajının yapılması amacıyla kullanılacaktır.
+
+
+--------------------------------------------------------------------------------
+[3. SATIR]
+--------------------------------------------------------------------------------
+• Kuruluşta Bulunan Altyapı/Ekipman Türü - Modeli (Laboratuvar- Araç- Makine-Teçhizat vb.) *:
+GTÜ ve Atölye Bünyesindeki Endüstriyel FDM (PLA/PETG) 3B Yazıcılar
+
+• Projede Kullanım Amacı *:
+3 parmaklı biyonik el protezinin parmak eklemleri, avuç içi taşıyıcı mekanik şasisi ve ön kola takılacak giyilebilir sensör/mikrodenetleyici koruma muhafazalarının (enclosure) CAD tasarımlarından fiziksel prototip olarak üretilmesinde kullanılacaktır.
+
+
+--------------------------------------------------------------------------------
+[4. SATIR]
+--------------------------------------------------------------------------------
+• Kuruluşta Bulunan Altyapı/Ekipman Türü - Modeli (Laboratuvar- Araç- Makine-Teçhizat vb.) *:
+Kişisel Bilgisayarlar / Taşınabilir İş İstasyonları ve Açık Kaynaklı Geliştirme Araç Zinciri (PlatformIO, ESP-IDF, VS Code, TensorFlow, emlearn, Three.js)
+
+• Projede Kullanım Amacı *:
+ESP32-S3 çift çekirdekli FreeRTOS gömülü C++ firmware kodlaması, çoklu deneklerden toplanan sEMG-IMU verileriyle TinyML modellerinin eğitimi, INT8 kuantizasyonu ve web tabanlı Three.js 3D Dijital İkiz simülasyon arayüzünün geliştirilmesi amacıyla kullanılacaktır.
+================================================================================

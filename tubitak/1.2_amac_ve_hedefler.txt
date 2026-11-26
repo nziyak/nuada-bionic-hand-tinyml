@@ -1,0 +1,28 @@
+1.2. Amaç ve Hedefler
+
+1. Projenin Genel Amacı
+Bu projenin temel amacı; yüksek maliyetli ticari sensörler, harici bilgisayar ve iletken jel bağımlılığını ortadan kaldırarak, düşük maliyetli donanım bileşenleri, paslanmaz kuru elektrotlu giyilebilir kol bandı, 4 kanallı yüzeyel elektromiyografi (sEMG) ve 6 eksenli ataletsel ölçüm birimi (IMU) entegrasyonuyla, ESP32-S3 çift çekirdekli mimarisi üzerinde doğrudan çalışan, gerçek zamanlı (<100 ms uçtan uca gecikmeli) ve yüksek doğruluklu (>%90) bir biyonik el protezi hareket kestirim ve çift eyleyicili (Fiziksel Protez El + Three.js 3D Dijital İkiz Telemetrisi) kontrol altyapısı geliştirmektir.
+
+2. Ölçülebilir, Gerçekçi ve Somut Hedefler (SMART Kriterleri)
+Projenin genel amacına ulaşmak için belirlenen nicel ve nitel hedefler şunlardır:
+
+* Hedef 1 (Düşük Maliyetli Analog Ön Uç Modifikasyonu): 
+Fabrika çıkışı EKG (0.5–40 Hz) bandında çalışan 4 adet medikal AD8232 modülünün Sallen-Key analog filtre kapasitörleri (C1 ve C3) modifiye edilerek çalışma bandının 16–410 Hz sEMG aralığına taşınması ve kanal başına donanım maliyetinin ticari alternatiflere (örn. MyoWare 2.0) kıyasla %90 azaltılması.
+
+* Hedef 2 (Çift Çekirdekli FreeRTOS ve 2000 Hz DMA Örnekleme Mimarisi): 
+ESP32-S3 mikrodenetleyicisinin Çekirdek 1'inde (Core 1) kesintisiz 2000 Hz hızında çalışan deterministik DMA ADC1 sürekli tarama sürücüsünün kurulması; Çekirdek 0'da (Core 0) ise 100 Hz MPU-6050 IMU kinematik örnekleme ve IIR sayısal filtreleme süreçlerinin çekirdekler arası kuyruklar (FreeRTOS Queues) ile CPU çekişmesi olmadan koşturulması.
+
+* Hedef 3 (İki Hatlı TinyML Modellerinin Eğitimi ve Kuantizasyonu): 
+Birinci araştırmacı tarafından ham zaman serisi dalga formları (1D-CNN, MLP), ikinci araştırmacı tarafından ise sayısal sinyal işleme tabanlı Hudgins öznitelikleri (MAV, RMS, WL, ZC ile SVM ve MLP) kullanılarak eğitilen modellerin INT8 kuantize edilmesi ve bellek/gecikme/doğruluk parametrelerinin sistematik olarak kıyaslanması.
+
+* Hedef 4 (Gerçek Zamanlı Çıkarım ve İnsan Algı Eşiği Altında Gecikme): 
+Eğitilen INT8 kuantize TinyML modellerinin TensorFlow Lite for Microcontrollers (TFLM) ve emlearn altyapısıyla ESP32-S3 üzerinde çalıştırılarak, uç cihazdaki saf çıkarım süresinin (inference latency) <50 ms, toplam uçtan uca sistem gecikmesinin (örnekleme + filtreleme + model çıkarımı) ise insan algı eşiği olan 100 ms'nin altında tutulması.
+
+* Hedef 5 (Kuru Elektrotlu Giyilebilirlik ve Yüksek Sınıflandırma Doğruluğu): 
+Kullanıcının her gün jel sürme zorunluluğunu ortadan kaldıran paslanmaz çıtçıt kuru elektrotlu giyilebilir kol bandı altyapısıyla; iki aşamalı (önce kuru, sonra jelli referans) veri seti üzerinden eğitilen modellerin, günlük kavrama işlevlerinin %85'ini temsil eden 3 parmaklı 5 temel el hareketini (Yumruk, Açık El, Cımbız, İşaret Etme, Dinlenme) uç cihazda yalnızca kuru elektrotlar ile en az %90 sınıflandırma doğruluğu ile kestirebilmesi.
+
+* Hedef 6 (Kol Pozisyonu Dayanıklılığı - Kinematik Füzyon): 
+6 eksenli IMU'dan elde edilen Pitch ve Roll eğim açılarının sınıflandırıcıya uzamsal özellik olarak eklenmesi sayesinde, kol pozisyonu (-45°, 0°, +45°) değiştiğinde yaşanan sınıflandırma performans kaybının telafi edilmesi ve kararlı çalışmanın korunması.
+
+* Hedef 7 (Çift Eyleyici Doğrulaması: Fiziksel Protez ve 3D Dijital İkiz): 
+Kestirilen el hareketlerinin; (a) 3B yazıcı ile üretilen 3 parmaklı biyonik el mekanizmasında mikro servo motorlar ve tendon misinalarıyla fiziksel olarak eyleme dönüştürülmesi, (b) eşzamanlı olarak kablosuz telemetri (Wi-Fi WebSockets/UDP) üzerinden web tabanlı Three.js WebGL 3D Dijital İkiz simülasyonuna aktarılarak görsel olarak doğrulanması.

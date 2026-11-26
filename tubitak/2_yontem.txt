@@ -1,0 +1,40 @@
+2. YÖNTEM
+
+1. Araştırma Tasarımı ve Çift Çekirdekli Gömülü Mimari
+Araştırma; biyopotansiyel sinyal alımı, çift çekirdekli gerçek zamanlı işletim sistemi (FreeRTOS) boru hattı, uç yapay zekâ (TinyML) çıkarımı ve çift yönlü eyleyici doğrulama (Fiziksel Biyonik El Protezi + 3D Dijital İkiz Simülasyonu) olmak üzere 4 ana aşamadan oluşmaktadır.
+
+a) Analog Ön Uç (AFE) Dönüşümü ve Frekans Bandı Tasarımı:
+Literatürde insan iskelet kası aksiyon potansiyellerinin (MUAP) baskın enerji spektrumunun 20–450 Hz aralığında olduğu kanıtlanmıştır (Webster ve Nimunkar, 2020). Düşük maliyetli Analog Devices AD8232 modülü fabrika çıkışında 0.5–40 Hz EKG bandına ayarlıdır. Donanım aşamasında, entegrenin ikinci derece Sallen-Key alçak geçiren filtre katındaki C3 (10 nF -> 1.0 nF) ve C1 (1.5 nF -> 150 pF) kapasitörleri modifiye edilerek kesim frekansı 41.09 Hz'den 410.9 Hz'e yükseltilecek; böylece kas kasılma enerjisinin %95'i analogda kayıpsız geçirilecek ve 1100 katlık sistem kazancı korunacaktır (Analog Devices Inc., 2013; Theremino System, 2016).
+
+b) Elektrot Yerleşimi ve Biyomekanik Haritalama:
+Günlük yaşamdaki kavrama hareketlerinin %85'ini karşılayan 3 parmaklı (Baş, İşaret, Orta) hareket kümesini kontrol etmek için ön kola 4 diferansiyel elektrot çifti SENIAM protokolüne uygun olarak (Hermens vd., 2000) (20 mm elektrotlar arası mesafe - IED, kas liflerine paralel) yerleştirilecektir:
+* Kanal 1 (CH1): Flexor Digitorum Superficialis (FDS) - Parmak bükme (Yumruk)
+* Kanal 2 (CH2): Flexor Pollicis Longus (FPL) - Başparmak bükme (Cımbız/Pinch)
+* Kanal 3 (CH3): Extensor Digitorum (ED) - Parmak açma (Açık El)
+* Kanal 4 (CH4): Extensor Pollicis & Indicis (EPL/EI) - İşaret etme (Point)
+Referans elektrotu dirsek arkasındaki elektriksel olarak nötr kemik çıkıntısına (Olecranon) bağlanacaktır. Protezin günlük yaşamda pratik ve ergonomik taşınabilirliğini sağlamak amacıyla nihai hedefimiz; jel sürme zorunluluğunu ortadan kaldıran tamamen kuru elektrotlu (dry-electrode) giyilebilir bir kol bandı mimarisidir. Bu doğrultuda veri toplama protokolünde her katılımcıdan iki aşamalı veri alınacaktır: (1) Önce tamamen kuru paslanmaz çelik çıtçıt elektrotlarla kuru cilt temasındaki sinyal ve empedans davranışı kaydedilecek, (2) ardından medikal iletken jel uygulanarak ideal referans (ground truth) verisi toplanacaktır. Böylece modeller hem kuru hem jelli koşullarda eğitilip kıyaslanacak; nihai prototipin sahada jel gerektirmeden kuru elektrotlarla yüksek kararlılıkla çalışabilmesi doğrulanacaktır.
+
+c) ESP32-S3 Çift Çekirdekli (Dual-Core FreeRTOS) İşlem Hattı:
+Mikrodenetleyici üzerinde zamanlama çakışmalarını önlemek amacıyla iş yükü asimetrik olarak iki bağımsız çekirdeğe dağıtılacaktır:
+* Çekirdek 1 (Sert Gerçek Zamanlı - Nuri Ziya Kırtepe): Dahili ADC1 birimi DMA (Direct Memory Access) sürekli tarama modunda çalıştırılarak 4 kanal sEMG verisi 2000 Hz hızında CPU polling gecikmesi olmaksızın çift arabelleklere (double-buffering) doldurulacaktır. Ham zaman serisi tensörleri (4 kanal x 200 örnek) üzerinden INT8 kuantize derin öğrenme modelleri (1D-CNN ve MLP), TensorFlow Lite for Microcontrollers (TFLM) (Warden ve Situnayake, 2019) ve ESP-NN vektör hızlandırma talimatlarıyla Çekirdek 1 üzerinde koşturulacaktır.
+* Çekirdek 0 (Yumuşak Gerçek Zamanlı - Evrim Doğa Solmaz): MPU-6050 IMU sensöründen I2C Fast-Mode (400 kHz) üzerinden 3 eksen ivme ve jiroskop verileri (Pitch ve Roll eğim açıları) 100 Hz hızında okunacaktır. Çekirdek 1'den FreeRTOS kuyrukları (queues) ile aktarılan pencereler üzerinde C++ IIR 20–450 Hz bant geçiren ve 50 Hz şebeke çentik filtreleri çalıştırılacak; 4 standart Hudgins özniteliği (MAV, RMS, WL, ZC) hesaplanarak (Hudgins vd., 1993; Phinyomark vd., 2012) C dilinde gömülü SVM sınıflandırıcı (emlearn) ve MLP modelleri ile tahmin üretilecektir.
+
+d) Çift Eyleyici Çıktı Mimarisi (Fiziksel Protez + Three.js 3D Dijital İkiz):
+Kestirilen 5 temel el hareketi (Dinlenme, Yumruk, Açık El, Cımbız, İşaret) eşzamanlı iki ortama iletilecektir:
+1. Fiziksel Protez: 3B yazıcıyla üretilen 3 parmaklı mekanik eldeki servo motorlar tetiklenerek fiziksel nesne kavrama doğrulaması yapılacaktır. Nihai sistem doğrulaması, kullanıcının koluna takılan paslanmaz çıtçıtlı kuru elektrot bandı ile hiçbir harici jel sürmeden gerçekleştirilecek; böylece sistemin gerçek yaşamda giyilebilirliği somut olarak kanıtlanacaktır.
+2. 3D Dijital İkiz: Çekirdek 0 üzerindeki LwIP Wi-Fi yığını aracılığıyla WebSocket/UDP paketleri olarak bilgisayara/tarayıcıya aktarılacak; Three.js WebGL tabanlı etkileşimli 3B sanal el modeli üzerinde hareketler <50 ms telemetri gecikmesiyle canlı görselleştirilecektir.
+
+2. Bağımlı ve Bağımsız Değişkenler
+* Bağımsız Değişkenler: Hedef el hareket sınıfları (5 sınıf), kolun uzaysal duruş açıları (-45°, 0°, +45°) (Radmand vd., 2014), elektrot temas koşulu (Kuru vs. Jelli Elektrot), denek çeşitliliği, model mimarileri (1D-CNN vs. SVM vs. MLP) ve işlem çekirdekleri.
+* Bağımlı Değişkenler: Sınıflandırma doğruluğu (Accuracy, F1-Score), uç cihazdaki çıkarım süresi (Inference Latency - ms), uçtan uca sistem tepki süresi (ms), donanım bellek tüketimi (SRAM/Flash - KB) ve telemetri aktarım gecikmesi.
+
+3. İstatistiksel Değerlendirme ve Doğrulama Yöntemleri
+Veri setleri 7 senaryolu deneysel matrisle değerlendirilecektir: (1) Oturum-içi, (2) Oturumlar-arası, (3) Kol pozisyonu çapraz testi, (4) Kuru ve jelli elektrot çapraz başarım analizi (Dry vs. Wet domain evaluation: Jelli referans verisiyle zenginleştirilen modellerin jelsiz kuru elektrot test verisindeki gürbüzlüğü ve sinyal kayması dayanımı), (5) Hız/Kuvvet varyasyonları, (6) Denek-içi 10-katlamalı çapraz doğrulama (10-Fold Cross Validation), (7) Denekler-arası genelleştirme (Leave-One-Subject-Out - LOSO). Modellerin performans farkları bağımlı örneklem t-testi ve tek yönlü ANOVA ile p < 0.05 anlamlılık düzeyinde test edilecek; sınıflandırma performansı Hata Matrisi (Confusion Matrix) üzerinden analiz edilecektir.
+
+4. Ön Çalışma ve Fizibilite (Pilot Deney Bulguları)
+Proje ekibi tarafından ESP32-S3 ve AD8232 donanımları üzerinde laboratuvar fizibilite testleri tamamlanmıştır:
+* 12-bit ADC ve 500 Hz örnekleme hızında yazılan test yazılımı ile FDS kasından canlı sEMG sinyali başarıyla okunmuş; dinlenmede 2048 merkezli stabil bazal çizgi, kasılma anında ise 1500 birimlik (~1.15 V) belirgin genlik salınımı doğrulanmıştır.
+* Yapılan ön deneyde, modifiye edilmemiş fabrika çıkışı EKG filtresinin 0.5 Hz yüksek geçiren zaman sabiti nedeniyle sert kasılmalarda op-amp ray doyumuna (3.3V / 4095 kilitlenmesi) girdiği ve toparlanmanın ~1.5 saniye sürdüğü deneysel olarak kaydedilmiştir. Bu bulgu, önerdiğimiz C1/C3 kapasitör modifikasyonunun sistemin hızlı toparlanması (<20 ms) için teknik bir zorunluluk olduğunu somut olarak kanıtlamıştır.
+
+5. Yöntemin Çalışma Takvimi ile İlişkisi
+Yöntem adımları doğrudan 5 ana iş paketine (İP) bağlanmıştır: AFE modifikasyonu ve donanım testleri İP1'de; çoklu deneklerden sEMG-IMU veri toplama protokolü İP2'de; paralel iki hattın model eğitimi ve kuantizasyonu İP3'te; TFLM uç cihaz optimizasyonu ve çift çekirdek FreeRTOS entegrasyonu İP4'te; 3B baskı biyonik el protezinin ve Three.js dijital ikizinin doğrulanması ise İP5'te icra edilecektir.

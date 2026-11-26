@@ -1,0 +1,32 @@
+================================================================================
+BÖLÜM 4. ARAŞTIRMA ÖNERİSİNİN YAYGIN ETKİSİ
+================================================================================
+(Arayüzdeki 3 satırın sağ tarafındaki kutucuklara sırasıyla yapıştırınız)
+
+
+--------------------------------------------------------------------------------
+1. SATIR: Bilimsel/Akademik Çıktılar
+(Sağdaki 1. kutucuğa yapıştırınız)
+--------------------------------------------------------------------------------
+1. Öğrenci/Akademik Konferans Bildirisi Hedefi: Danışmanımız Prof. Dr. Erkan Zergeroğlu rehberliğinde, proje bulguları (AD8232 sEMG filtre modifikasyonu, IMU ile kol açısı telafisi, kuru ve jelli elektrot sinyal dinamiklerinin analizi ve ESP32-S3 üzerinde SVM, MLP, 1D-CNN modellerinin TinyML kıyaslaması) akademik bildiri formatında hazırlanarak IEEE SIU (Sinyal İşleme ve İletişim Uygulamaları Kurultayı), TIPTEKNO veya mühendislik/biyomedikal öğrenci kongrelerine bildiri/poster olarak sunulması hedeflenmektedir.
+2. Açık Erişimli Kuru-Jelli Çift Alanlı Benchmark Veri Seti: Üniversitemiz bünyesindeki gönüllü katılımcılardan (hedef: 50 kişi) iki aşamalı protokolle (önce kuru elektrot, ardından iletken jel) ve 3 farklı kol açısında (-45°, 0°, +45°) toplanan senkron 4 kanal sEMG ve 6 eksen IMU zaman serisi veri tabanı; açık erişimli (open-access) olarak Zenodo ve GitHub üzerinde araştırmacıların kullanımına sunulacaktır. Bu veri seti, literatürde kuru ve jelli elektrot sinyal kayması ile kol pozisyonu etkisini birlikte ele alan özgün bir referans kıyaslama kaynağı olacaktır.
+3. Kapsamlı Bitirme Projesi Raporları ve Makale Taslağı: Gebze Teknik Üniversitesi Bilgisayar Mühendisliği Bölümü bitirme çalışmaları kapsamında (Nuri Ziya Kırtepe için CSE 496, Evrim Doğa Solmaz için CSE 495); danışmanımız gözetiminde, çift çekirdekli FreeRTOS boru hattı, gömülü TinyML çıkarımı ve 3D dijital ikiz telemetrisini kapsayan makale formatında detaylı teknik bitirme projesi raporları üretilecektir.
+
+
+--------------------------------------------------------------------------------
+2. SATIR: Ekonomik/Ticari/Sosyal Çıktılar
+(Sağdaki 2. kutucuğa yapıştırınız)
+--------------------------------------------------------------------------------
+1. Çalışır Çift Eyleyicili Prototip: Yüksek maliyetli ithal protezlere (~20.000 USD) alternatif olarak, toplam donanım kiti maliyeti son derece erişilebilir seviyede (<3.500 TL) kalan; 3B baskı biyonik el protezi ve eşzamanlı Three.js WebGL 3D Dijital İkiz simülasyonundan oluşan yerli bir kontrol ekosistemi geliştirilecektir.
+2. Jelsiz Giyilebilirlik ve 10 Kat Maliyet Düşüşü: Günlük kullanımda cilt tahrişi yaratan ve pratik olmayan iletken jel zorunluluğu ile tek kullanımlık yapışkanlı ped israfı tamamen ortadan kaldırılacaktır. Paslanmaz çıtçıtlı kuru elektrot (dry-electrode) mimarisi sayesinde kullanıcının hiçbir jel sürmeden doğrudan koluna takıp kullanabileceği, uzun ömürlü ve gerçek anlamda giyilebilir bir kol bandı sistemi sunulacaktır. Ayrıca AD8232 modifikasyonuyla donanım maliyeti ticari muadillerine kıyasla onda bire indirilecektir.
+3. Açık Kaynaklı Referans Tasarım: AD8232 modifikasyon şemaları, Eagle/Gerber tasarım dosyaları ve ESP32-S3 FreeRTOS/TFLM C++ kaynak kodları açık kaynak lisansıyla (MIT) GitHub üzerinde paylaşılarak öğrenci ve araştırmacılar için yerli ve erişilebilir bir referans altyapı kazandırılacaktır.
+4. Sosyal Fayda: Maliyet ve giyilebilirlik bariyeri yıkılarak ampute ve felçli bireylerin yüksek teknolojili biyonik protezlere ve sanal rehabilitasyon araçlarına erişilebilirliği artırılacaktır.
+
+
+--------------------------------------------------------------------------------
+3. SATIR: Yeni Proje(ler) Oluşturmasına Yönelik Çıktılar
+(Sağdaki 3. kutucuğa yapıştırınız)
+--------------------------------------------------------------------------------
+1. TEKNOFEST ve TÜBİTAK 2242 Yarışmaları: Geliştirilen çalışan fiziksel el ve 3D dijital ikiz prototipi; TEKNOFEST Sağlıkta Yapay Zekâ / Engelsiz Yaşam Teknolojileri yarışmalarına ve TÜBİTAK 2242 Üniversite Öğrencileri Araştırma Proje Yarışmaları'na taşınarak prototipin ulusal ölçekte sergilenmesi ve yarışması hedeflenmektedir.
+2. TÜBİTAK 2209-B ve Lisansüstü Ar-Ge Zemini: Projede doğrulanacak olan gömülü yapay zekâ ve düşük maliyetli sensör altyapısının; bir sonraki aşamada medikal protez sanayi ortaklıklarıyla TÜBİTAK 2209-B (Sanayiye Yönelik Lisans Araştırma Projesi) başvurusuna veya araştırmacıların lisansüstü (yüksek lisans) tez çalışmalarına somut ve çalışan bir Ar-Ge altyapısı oluşturması amaçlanmaktadır.
+================================================================================

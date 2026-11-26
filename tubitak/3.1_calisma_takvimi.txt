@@ -1,0 +1,78 @@
+================================================================================
+BÖLÜM 3.1. ÇALIŞMA TAKVİMİ ("+ EKLE" İLE SATIR SATIR EKLEME)
+================================================================================
+(Genel Proje Süresi: 9 Ay)
+(Kırmızı "+ Ekle" butonuna basarak 5 faaliyetin her birini ayrı bir satır olarak ekleyiniz)
+
+
+--------------------------------------------------------------------------------
+[1. SATIR / FAALİYET 1]
+--------------------------------------------------------------------------------
+• Faaliyetler *:
+Analog Ön Uç (AFE) Modifikasyonu ve Çift Çekirdekli Donanım Entegrasyonu (1. - 2. Ay):
+4 adet AD8232 biyopotansiyel modülünün Sallen-Key analog filtre katındaki kapasitörleri (C1 ve C3) modifiye edilerek frekans bandı 0.5-40 Hz EKG aralığından 16-410 Hz sEMG aralığına taşınacaktır. ESP32-S3 Çekirdek 1 üzerinde 2000 Hz sürekli DMA ADC1 sürücüsü ve Çekirdek 0 üzerinde MPU-6050 IMU I2C 100 Hz açı okuma sürücüleri yazılacak; osiloskop ile sinyal kalitesi ve filtre geçiş eğrisi doğrulanacaktır.
+
+• Kim(ler) Tarafından Gerçekleştirileceği *:
+Nuri Ziya Kırtepe (Çekirdek 1 DMA ADC Sürücüsü) & Evrim Doğa Solmaz (AFE Filtre Modifikasyonu ve Çekirdek 0 IMU Sürücüsü)
+
+• Başarı Ölçütü ve Araştırmanın Başarısına Katkısı *:
+4 adet AD8232 modülünün 16-410 Hz bant genişliği modifikasyonunun, 2000 Hz DMA ADC ve 100 Hz IMU okumasının osiloskopla doğrulanması. (Başarıya Katkısı: %20)
+
+
+--------------------------------------------------------------------------------
+[2. SATIR / FAALİYET 2]
+--------------------------------------------------------------------------------
+• Faaliyetler *:
+Biyomekanik Kol Bandı Prototiplemesi ve Çoklu Denek Veri Toplama Protokolü (2. - 4. Ay):
+SENIAM standartlarına uygun olarak ön kol kas gruplarına (FDS, FPL, ED, EPL) yerleştirilecek 4 çift paslanmaz çıtçıt elektrot içeren elastik kol bandı prototipi üretilecektir. Nihai sistemin jel gerektirmeyen pratik giyilebilirliğini sağlamak amacıyla katılımcılardan (hedef: 50 kişi) iki aşamalı protokol uygulanacaktır: her katılımcıdan 3 kol açısında (-45°, 0°, +45°) ve 5 temel el hareketinde önce tamamen kuru (dry), ardından iletken jel uygulanarak eşzamanlı sEMG ve IMU zaman serisi veri tabanı toplanacak ve etiketlenecektir.
+
+• Kim(ler) Tarafından Gerçekleştirileceği *:
+Nuri Ziya Kırtepe & Evrim Doğa Solmaz (Ortak: Kol bandı mekanik üretimi, elektrot montajı ve çoklu deneklerden veri toplama)
+
+• Başarı Ölçütü ve Araştırmanın Başarısına Katkısı *:
+Geniş katılımcı grubundan (hedef: 50 kişi) hem kuru hem jelli koşullarda 3 kol açısında (-45°, 0°, +45°) 5 temel el hareketine ait senkron sEMG-IMU veri tabanının etiketli olarak tamamlanması. (Başarıya Katkısı: %20)
+
+
+--------------------------------------------------------------------------------
+[3. SATIR / FAALİYET 3]
+--------------------------------------------------------------------------------
+• Faaliyetler *:
+İki Hatlı TinyML Modellerinin Eğitimi ve Kuantizasyon Kıyaslaması (4. - 6. Ay):
+Birinci hatta ham zaman serisi dalga formları üzerinden 1D-CNN ve MLP derin öğrenme modelleri eğitilecek; ikinci hatta ise C++ IIR sayısal filtreleme ve Hudgins öznitelikleri (MAV, RMS, WL, ZC) üzerinden SVM (emlearn) ve MLP modelleri eğitilecektir. Modeller INT8 kuantizasyonuna tabi tutularak 6 senaryolu deneysel matrisle doğruluk ve bellek boyutları bilgisayar ortamında kıyaslanacaktır.
+
+• Kim(ler) Tarafından Gerçekleştirileceği *:
+Nuri Ziya Kırtepe (Ham Zaman Serisi Hattı: 1D-CNN ve MLP Eğitimi) & Evrim Doğa Solmaz (Sayısal Sinyal İşleme Hattı: Hudgins Öznitelik, SVM ve MLP Eğitimi)
+
+• Başarı Ölçütü ve Araştırmanın Başarısına Katkısı *:
+Ham ve öznitelik hatlarında eğitilen INT8 modellerde en az %90 sınıflandırma doğruluğu ve <50 KB bellek boyutuna ulaşılması. (Başarıya Katkısı: %25)
+
+
+--------------------------------------------------------------------------------
+[4. SATIR / FAALİYET 4]
+--------------------------------------------------------------------------------
+• Faaliyetler *:
+ESP32-S3 Üzerinde Çift Çekirdek FreeRTOS ve Uç Çıkarım Entegrasyonu (6. - 7. Ay):
+Eğitilen INT8 modeller (1D-CNN, MLP, SVM) TFLM C++ kütüphanesi ve emlearn altyapısıyla ESP32-S3 mikrodenetleyicisine gömülecektir. Çekirdek 1'de sert gerçek zamanlı DMA ADC ve derin öğrenme (1D-CNN / MLP) çıkarımı koşturulurken, Çekirdek 0'da IMU füzyonu, öznitelik tabanlı modeller (SVM / MLP) ve Wi-Fi telemetrisi eşzamanlı çalıştırılacaktır. Uç cihaz çıkarım gecikmesinin <50 ms eşiğinde çalıştığı ve toplam sistem gecikmesinin <100 ms olduğu doğrulanacaktır.
+
+• Kim(ler) Tarafından Gerçekleştirileceği *:
+Nuri Ziya Kırtepe (Çekirdek 1: TFLM INT8 Uç Çıkarım Motoru) & Evrim Doğa Solmaz (Çekirdek 0: IMU Kinematik Füzyon ve LwIP Wi-Fi Telemetrisi)
+
+• Başarı Ölçütü ve Araştırmanın Başarısına Katkısı *:
+ESP32-S3 üzerinde uç model çıkarım gecikmesinin <50 ms, toplam uçtan uca sistem gecikmesinin <100 ms eşiğinde kararlı çalışması. (Başarıya Katkısı: %20)
+
+
+--------------------------------------------------------------------------------
+[5. SATIR / FAALİYET 5]
+--------------------------------------------------------------------------------
+• Faaliyetler *:
+Çift Eyleyici Doğrulaması: 3B Biyonik El Protezi ve 3D Dijital İkiz Simülasyonu (7. - 9. Ay):
+3B yazıcı ile üretilen 3 parmaklı biyonik el protez mekanizması mikro servolar ve tendon misinalarıyla donatılacaktır. ESP32-S3'ten üretilen gerçek zamanlı kestirim kararları eşzamanlı olarak: (a) fiziksel el servolarına aktarılarak kavrama testleri yapılacak, (b) kablosuz WebSockets telemetrisiyle Three.js WebGL 3D Dijital İkiz simülasyonuna aktarılarak görsel doğrulama ve kullanıcı tepki süresi test edilecektir. Nihai prototipin harici jel sürme külfeti olmaksızın, tamamen kuru elektrotlu giyilebilir kol bandı ile kola takılarak pratik ve kararlı çalıştığı kanıtlanacaktır.
+
+• Kim(ler) Tarafından Gerçekleştirileceği *:
+Nuri Ziya Kırtepe (Biyonik El Servo Kontrolü) & Evrim Doğa Solmaz (Three.js WebGL 3D Dijital İkiz Arayüzü)
+
+• Başarı Ölçütü ve Araştırmanın Başarısına Katkısı *:
+Kestirilen hareketlerin 3B biyonik el protezinde fiziksel olarak ve Three.js WebGL dijital ikizinde görsel olarak; harici jel gerektirmeyen kuru elektrotlu giyilebilir kol bandı ile başarıyla doğrulanması. (Başarıya Katkısı: %15)
+================================================================================
+(Toplam Başarıya Katkı Yüzdeleri: %20 + %20 + %25 + %20 + %15 = %100)
+================================================================================

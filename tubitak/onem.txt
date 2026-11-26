@@ -1,0 +1,30 @@
+1.1. Konunun Önemi ve Araştırma Önerisinin Bilimsel Niteliği
+
+1. Konunun Kapsamı ve Önemi
+Üst ekstremite ampütasyonu yaşayan bireylerin günlük yaşam aktivitelerini bağımsız şekilde sürdürebilmeleri için miyoelektrik kontrollü biyonik el protezleri hayati bir rehabilitasyon teknolojisidir. El hareketlerinin doğal ve sezgisel kontrolü, ön koldaki kasların elektriksel aktivitesini ölçen yüzeyel elektromiyografi (sEMG) sinyallerinin yapay zekâ algoritmalarıyla sınıflandırılmasına dayanır. Günlük nesne kavrama işlevlerinin yaklaşık %85'i başparmak, işaret ve orta parmağın koordinasyonundan oluştuğundan, bu hareketlerin düşük gecikmeyle ve yüksek doğrulukla kestirilmesi protezin kullanıcı tarafından benimsenmesinde belirleyicidir.
+
+2. Literatürdeki Boşluk ve Çözüm Getirilen Temel Problemler
+Mevcut akademik literatür ve ticari protez sistemleri incelendiğinde üç temel problem tespit edilmiştir:
+a) Yüksek Donanım ve Sensör Maliyeti: Ticari sEMG sensör modüllerinin birim maliyetlerinin yüksek olması (kanal başına 50-100 USD), çok kanallı bir protezin maliyetini binlerce dolara çıkarmakta ve sosyoekonomik erişilebilirliği engellemektedir.
+b) Harici Bilgi-İşlem Bağımlılığı ve Gerçek Zamanlılık Kısıtları: Literatürdeki çalışmaların büyük kısmı yüksek başarımlı derin öğrenme modellerini harici masaüstü GPU bilgisayarlarda çalıştırmakta; protezin içine sığabilecek kısıtlı mikrodenetleyiciler üzerinde gerçek zamanlı uç yapay zekâ (TinyML) entegrasyonu ve çift çekirdekli gerçek zamanlı işletim sistemi (FreeRTOS) mimarileri sınırlı kalmaktadır.
+c) Kol Pozisyonu Değişimi (Limb Position Effect): Literatürdeki modeller çoğunlukla sabit kol pozisyonunda test edilmekte; kolun uzaydaki duruş açısı değiştikçe kas geometrisi ve yerçekimi etkisiyle oluşan sinyal kayması (domain shift) sebebiyle sınıflandırma başarımı pratikte ciddi oranda düşmektedir.
+
+3. Araştırma Önerisinin Bilimsel Niteliği ve Özgün Değeri
+Bu proje; yüksek maliyetli ticari sensörler yerine, medikal analog ön uç (AFE) modüllerinin (AD8232) Sallen-Key filtre ağlarını donanımsal olarak dönüştürerek (EKG bandından 16-410 Hz sEMG bandına geçiş) donanım maliyetini onda bire düşüren ekonomik bir altyapı önermektedir. Sistem; sEMG verilerini uzamsal kol kinematiğini izleyen 6 eksenli ataletsel ölçüm birimi (IMU) ile birleştirerek kol pozisyonu kaynaklı doğruluk kaybını gidermektedir. 
+
+Projenin temel bilimsel özgünlüğü; ESP32-S3 mikrodenetleyicisinin çift çekirdekli (Dual-Core FreeRTOS) asimetrik mimarisi üzerinde kurgulanan iki paralel hatta 3 farklı model ailesinin (SVM, MLP ve 1D-CNN) sistematik kıyaslanmasıdır:
+* Çekirdek 1 (Sert Gerçek Zamanlı Hat): 2000 Hz sürekli DMA ADC okuması ve ham zaman serisi dalga formları üzerinden doğrudan INT8 kuantize 1D-CNN ve MLP derin öğrenme çıkarımı.
+* Çekirdek 0 (Yumuşak Gerçek Zamanlı Hat): IMU kinematik füzyonu, C++ IIR sayısal filtreleme, Hudgins öznitelik çıkarımı (MAV, RMS, WL, ZC) ile çalışan SVM ve MLP sınıflandırıcıları ve eşzamanlı Three.js WebGL 3D Dijital İkiz telemetrisi.
+Sistem çıktısı; hem 3B yazıcıyla üretilen fiziksel biyonik el protezini servo motorlarla kontrol edecek, hem de eşzamanlı olarak kablosuz telemetriyle 3D Dijital İkiz simülasyonunda görselleştirilecektir.
+
+4. Araştırma Sorusu ve Hipotezler
+* Araştırma Sorusu: Düşük maliyetli donanım modifikasyonu ve çift çekirdekli gömülü FreeRTOS mimarisiyle elde edilen çok kanallı sEMG-IMU sinyalleri; harici bir bilgisayara ihtiyaç duymadan, kısıtlı bir uç mikrodenetleyici üzerinde 3 farklı TinyML modeliyle (SVM, MLP, 1D-CNN) el hareketlerini gerçek zamanlı (<100 ms uçtan uca gecikmeyle) ve yüksek doğrulukla (>%90) kestirip hem fiziksel protezi hem 3D dijital ikizi eşzamanlı sürebilir mi?
+* Hipotez 1: Analog filtre bant genişliği sEMG frekanslarına (16-410 Hz) uyarlanan medikal ön uç modülü, ticari muadillerinin onda biri maliyetle aksiyon potansiyellerini bilgi kaybı olmadan yakalayacaktır.
+* Hipotez 2: sEMG sinyallerine IMU uzamsal açı verilerinin eklenmesi, kol pozisyonu değişiminden kaynaklanan sınıflandırma performans kaybını anlamlı ölçüde telafi edecektir.
+
+5. 12. Kalkınma Planı ve 2030 Sanayi ve Teknoloji Stratejisi ile İlişkisi
+Proje önerisi; T.C. Cumhurbaşkanlığı On İkinci Kalkınma Planı'nda (2024-2028) yer alan;
+* İlaç ve Tıbbi Cihaz Politikaları (Sayfa 87-88): Tıbbi cihaz sektöründe ithalat bağımlılığının azaltılması (Madde 440), yapay zekâ tabanlı sağlık teknolojilerinin geliştirilmesi (Madde 441.5) ve yerli prototip geliştirme kapasitesinin artırılması (Madde 443),
+* Bilim, Teknoloji ve Yenilik Politikaları (Sayfa 120-121): Milli Teknoloji Hamlesi kapsamında kritik teknoloji alanları olarak belirlenen yapay zekâ, robotik ve mikroelektronik Ar-Ge faaliyetlerinin desteklenmesi (Madde 557),
+* Bilgi ve İletişim Teknolojileri (Sayfa 130): Yapay zekâ alanındaki temel teknolojilerin geliştirilmesi ve yaygınlaştırılması (Madde 591)
+öncelikli hedefleriyle birebir örtüşmektedir. Ayrıca Sanayi ve Teknoloji Bakanlığı 2030 Sanayi ve Teknoloji Stratejisi kapsamındaki "Uç Bilişim (Edge AI), Giyilebilir Sağlık Teknolojileri ve Biyomekatronik Sistemler" odak alanlarına doğrudan hizmet ederek ithal protez bağımlılığına karşı yerli, açık kaynaklı ve düşük maliyetli bir teknolojik taban oluşturmayı amaçlamaktadır. Proje, Gebze Teknik Üniversitesi bünyesinde Prof. Dr. Erkan Zergeroğlu danışmanlığında yürütülecektir.

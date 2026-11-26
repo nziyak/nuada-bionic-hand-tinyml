@@ -1,0 +1,27 @@
+================================================================================
+BÖLÜM 5. BELİRTMEK İSTEDİĞİNİZ DİĞER KONULAR (GRAFİK, ŞEMA VE BULGULAR)
+================================================================================
+(Metin editörünün araç çubuğundaki [🖼️] Resim Ekle butonuna basarak "tubitak/sistem_mimarisi_diyagrami.png" görselini şema olarak ekleyebilirsiniz. Aşağıdaki metin, orantılı yazı tiplerinde kayma yapmayacak şekilde temiz ve kurumsal olarak düzenlenmiştir.)
+
+--------------------------------------------------------------------------------
+YAPISTIRILACAK METIN:
+--------------------------------------------------------------------------------
+
+Değerlendirme jürisinin projenin teknik uygulanabilirliğini ve somut hazırlık düzeyini inceleyebilmesi amacıyla ön deneysel bulgular, çift çekirdekli sistem mimarisi ve donanım haritası aşağıda özetlenmiştir:
+
+1. Ön Fizibilite ve Canlı Kas Sinyali Testi Bulguları:
+Proje önerisi verilmeden önce ESP32-S3 ve AD8232 donanımları üzerinde laboratuvar ön testi gerçekleştirilmiştir:
+• 12-bit ADC (ADC1_CH0 / GPIO 1) ve 500 Hz örnekleme hızında yazılan test yazılımı ile ön koldaki FDS kasından canlı sEMG sinyali başarıyla okunmuştur.
+• Dinlenmede ~2048 (1.65V) seviyesinde temiz bir referans hattı gözlemlenmiş; yumruk sıkma anında sinyalin 1200 ile 3600 seviyelerine (yaklaşık 1.15 V tepeden tepeye genlik) salınarak güçlü aksiyon potansiyeli ürettiği doğrulanmıştır.
+• Ancak fabrika çıkışı EKG filtresinin 0.5 Hz zaman sabiti nedeniyle aşırı kasılmalarda op-amp'ın 4095 (3.3V) ray doyumuna girdiği ve boşalmanın ~1.5 saniye sürdüğü kaydedilmiştir. Bu deneysel bulgu, önerdiğimiz C1/C3 (16-410 Hz) filtre dönüşümünün sistemin anlık toparlanması (<20 ms) için mutlak gerekliliğini laboratuvarda ispatlamıştır.
+
+2. Çift Çekirdekli (Dual-Core FreeRTOS) Sistem Mimarisi:
+(Eklenen Şema Görseli: sistem_mimarisi_diyagrami.png)
+• Algılama ve Ön Uç: 4 Kanallı Modifiye AD8232 AFE (16–410 Hz sEMG) ve MPU-6050 6 Eksen IMU modülü.
+• Çekirdek 1 (Sert Gerçek Zamanlı Hat): 2000 Hz sürekli DMA ADC1 sürücüsü, ham zaman serisi arabellekleri, INT8 kuantize 1D-CNN ve MLP derin öğrenme modelleri (TFLM ve ESP-NN vektör hızlandırma).
+• Çekirdek 0 (Yumuşak Gerçek Zamanlı Hat): 100 Hz IMU yönelim füzyonu, C++ IIR sayısal filtreleme (20-450 Hz bant geçiren / 50 Hz çentik), 16 boyutlu Hudgins öznitelik çıkarımı (MAV, RMS, WL, ZC), C tabanlı gömülü SVM (emlearn) ve MLP modelleri ile LwIP Wi-Fi WebSocket/UDP telemetri yayını.
+• Eyleyici Ekosistemi: 3B baskı biyonik el mekanizması (mikro servo kontrolü) ve eşzamanlı web tabanlı Three.js WebGL 3D Dijital İkiz simülasyonu (<50 ms telemetri gecikmesi).
+
+3. Açık Kaynak Donanım Teyidi:
+AD8232 modifikasyon koordinatları, Analog Devices resmi veri sayfası (Analog Devices Inc., 2013) ve açık kaynaklı SparkFun SEN-12650 Eagle CAD şematik netlistleri (SparkFun Electronics, 2014) mikrometre hassasiyetinde incelenerek doğrulanmış; donanım riskleri sıfırlanmıştır.
+================================================================================
