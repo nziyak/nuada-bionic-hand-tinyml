@@ -160,10 +160,14 @@ def load_csv_dataset(dataset_dir: str, max_files: int = 8) -> Tuple[Any, Any, An
             continue
 
         raw_emg = df[emg_cols].values
+        # Otomatik voltaj ölçekleme: Eğer veriler ham V/mikrovolt seviyesindeyse (< 0.05 V), 1000 ile çarparak mV yap
+        if np.max(np.abs(raw_emg)) < 0.05:
+            raw_emg = raw_emg * 1000.0
+
         raw_imu = df[imu_cols].values if len(imu_cols) == 3 else np.zeros((len(df), 3), dtype=np.float32)
         raw_labels = df[label_cols[0]].values
 
-        # Kayan pencereleme (20 örnek pencere = 200 ms, 5 örnek adım = 50 ms)
+        # Kayan pencereleme (20 örnek pencere = 200 ms, 10 örnek adım = 100 ms)
         for i in range(0, len(df) - 20, 10):
             lbl = int(raw_labels[i + 10])
             # Sadece 0-4 arası sınıfları al (veya 1-5'i 0-4'e eşle)
@@ -172,6 +176,12 @@ def load_csv_dataset(dataset_dir: str, max_files: int = 8) -> Tuple[Any, Any, An
                     lbl = 4
                 else:
                     continue
+
+            # Sınıf Dengeleme (Undersampling): REST (0) sınıfı açık veri setlerinde %70-80 oranında baskındır.
+            # Modelin 'her şeye REST deyip %65 başarı alarak tembellik yapmasını (majority class collapse)'
+            # engellemek için REST pencerelerini hareket pencereleriyle dengeliyoruz:
+            if lbl == 0 and (i % 100 != 0):
+                continue
 
             all_emg_windows.append(raw_emg[i:i + 20])
             all_imu_windows.append(raw_imu[i:i + 20])
@@ -266,7 +276,9 @@ def run_pipeline(args):
     else:
         x_emg, x_imu, y = load_csv_dataset(args.dataset_dir)
 
-    print(f"[VERI] Toplam Pencere Sayısı: {len(y)}, Sınıf Sayısı: {len(set(y))}")
+    unique, counts = np.unique(y, return_counts=True)
+    dist_str = ", ".join([f"{GESTURE_CLASSES.get(u, str(u)).split(' ')[0]}: {c}" for u, c in zip(unique, counts)])
+    print(f"[VERI] Toplam Pencere Sayısı: {len(y)} ({dist_str})")
 
     # 2. Model Tipine Göre Giriş Matrisi Hazırlığı
     if args.model_type == "mlp":
@@ -276,7 +288,11 @@ def run_pipeline(args):
             feats = extract_window_features(x_emg[i], x_imu[i])
             feat_list.append(feats)
         X = np.array(feat_list, dtype=np.float32)
-        print(f"[ISLEM] MLP Giriş Boyutu: {X.shape}")
+        # Z-score Normalizasyonu: Farklı sensör ve voltaj seviyelerini standart aralığa çeker
+        X_mean = np.mean(X, axis=0)
+        X_std = np.std(X, axis=0) + 1e-7
+        X = (X - X_mean) / X_std
+        print(f"[ISLEM] MLP Giriş Boyutu: {X.shape} (Z-Score normalize edildi)")
         model = build_deep_mlp(input_dim=19, num_classes=5)
     else:  # cnn
         X = x_emg  # (N, 20, 4)
