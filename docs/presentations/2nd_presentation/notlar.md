@@ -99,7 +99,7 @@ Açık UCI sEMG veri seti ve ESP32-S3 mimarisi üzerinde elde edilen doğrulanm�
 | **Model Dosya Boyutu (INT8)** | **5.19 KB** (5.312 bayt) | **11.24 KB** (11.512 bayt) | Her iki model de dahili Flash'a rahatlıkla sığar (< 15 KB) |
 | **Tensor Arena RAM İhtiyacı** | **19 KB** (%3.71 SRAM) | **32 KB** (%6.25 SRAM) | ESP32-S3'ün 512 KB SRAM'inin çok küçük bir kısmını tüketir |
 | **Çıkarım Gecikmesi (Latency)** | **< 3 ms** | **~8 - 12 ms** | 100 Hz kontrol döngüsü için 50 ms bütçemiz var; ikisi de sınırın çok altında |
-| **Test Doğruluğu (Random %80/%20)** | **%76.35 - %82.00** | **%70.80 - %76.00** | Hocanın 'en az %75 olmalı' kriteri Deep MLP ile aşıldı |
+| **Test Doğruluğu (Random %80/%20)** | **%76.35 - %82.00** | **%70.80 - %76.00** | Fizyolojik alt-örnekleme ve doğru sınıf eşlemesi ile yüksek doğruluk |
 | **REST (Dinlenme) Yakalama** | **%97** (246 / 254 doğru) | **%96** (243 / 254 doğru) | Dinlenme anı yüksek kararlılıkla yakalanmaktadır |
 | **PINCH/FLEX (Cımbız) Yakalama** | **%92** (257 / 278 doğru) | **%86** (238 / 278 doğru) | Cımbız ve kavrama hareketleri %90+ seviyesindedir |
 | **OPEN/EXT (El Açma) Yakalama** | **%77** (226 / 293 doğru) | **%68** (199 / 293 doğru) | El açma ekstansör kaslarında güçlü ayrım |
@@ -109,7 +109,7 @@ Açık UCI sEMG veri seti ve ESP32-S3 mimarisi üzerinde elde edilen doğrulanm�
 
 ---
 
-## 10. Sınıflandırma Metrikleri ve Değerlendirme Çerçevesi (Hocanın Soru-Cevap Rehberi)
+## 10. Sınıflandırma Metrikleri ve Değerlendirme Çerçevesi
 
 ### Temel Metriklerin Anlamı:
 1. **Support (Destek Sayısı):** Test kümesinde o hareketten toplam kaç adet pencere (örnek) bulunduğunu belirtir. (Örn. PINCH satırında Support = 278 demek, test kümesinde kullanıcının cımbız hareketi yaptığı 278 adet test penceresi var demektir).
@@ -128,16 +128,16 @@ Açık UCI sEMG veri seti ve ESP32-S3 mimarisi üzerinde elde edilen doğrulanm�
 
 ---
 
-## 11. Hocanın Eleştirilerine ve Sorularına Karşı Savunma Rehberi
+## 11. Sıkça Sorulan Sorular ve Teknik Detaylar (FAQ)
 
-### Soru 1: "O nasıl bir veri seti mesela? Boyutu nedir, kim toplamış?"
-* **Cevap:** "Hocam, literatürde kabul görmüş **UCI Machine Learning Repository - EMG Data for Gestures** veri setini kullandık (Lobov et al., 2018). 36 sağlıklı denekten, önkol çevresine yerleştirilen 8 kanallı Thalmic Labs Myo sensör bandı ile 1000 Hz örneklemede toplanmış toplam 72 adet ham seans kaydıdır. Biz bu veri setinden projemizin 4 kanal elektrot yapısına uygun kanalları aldık; 1000 Hz sinyali 200 Hz'e indirip 100 ms'lik kayan pencerelerle 5 temel hareket sınıfını (Dinlenme, Yumruk, Cımbız, El Açma, İşaret) modelledik."
+### S1: Kullanılan Açık Veri Setinin (UCI sEMG) Teknik Özellikleri Nelerdir?
+* **Açıklama:** UCI Machine Learning Repository bünyesindeki **"EMG Data for Gestures"** veri setidir (Lobov et al., 2018). 36 sağlıklı denekten, önkol çevresine yerleştirilen 8 kanallı Thalmic Labs Myo sensör bandı ile 1000 Hz örneklemede toplanmış 72 oturumluk ham kayıttır. Bu veri setinden projemizin 4 kanallı elektrot anatomisine (fleksör ve ekstansör kas grupları) karşılık gelen kanallar seçilmiş; sinyal 200 Hz'e alt-örneklenerek 100 ms'lik pencerelerle 5 temel hareket sınıfında modellenmiştir.
 
-### Soru 2: "%60'larda başarı çok az, en azından %75 olmalı."
-* **Cevap:** "Haklısınız hocam. İlk denememizde UCI veri setindeki işaretsiz geçiş gürültüsü (Class 0) ile dinlenme anı (Class 1) birbirine karıştığı ve 1000 Hz'lik sinyale gereğinden dar pencere açıldığı için model %63 seviyesinde kalmıştı. Veri setinin ham zamanlama karakteristiğini inceleyerek 200 Hz alt-örnekleme uyguladık ve gürültülü geçişleri temizleyip sınıfları doğru eşledik. Şu an **Deep MLP modelimiz %76.35 - %82 genel doğruluğa** ulaştı. Özellikle Cımbız (%92 Recall, %91 Precision) ve Dinlenme (%97 Recall, %92 Precision) sınıflarında protez kontrolü için son derece güvenilir metrikler elde ettik."
+### S2: Model Başarımının %60 Bandından %82 Bandına Yükselme Sebebi Nedir?
+* **Açıklama:** İlk denemelerde 1000 Hz ham veri üzerinde 20 ms'lik dar bir pencere kullanılmış ve veri setindeki hareketler arası işaretsiz geçiş gürültüleri (Class 0) ile dinlenme anı (Class 1) çakışmıştır. Sinyale 200 Hz alt-örnekleme uygulanıp 100 ms fizyolojik pencereye geçilmesi ve etiketlerin projemizin 5 hareket sınıfına doğru eşlenmesiyle model kararlılığı artmış; Deep MLP genel doğruluğu **%76.35 - %82.00** bandına ulaşmıştır.
 
-### Soru 3: "Veri toplama ve test kısımlarında geç kalmışsınız, donanım nerede?"
-* **Cevap:** "Hocam, donanım tarafında pertinaks üzerine 4 kanallı TL084 sEMG sensör dağıtımı, voltaj bölücüler ve MPU-6050 montajı için 6 sayfalık detaylı üretim rehberimizi tamamladık (`emg_hub_lehim_rehberi.pdf`), lehimleme ve montaj aşaması hızla sürüyor. Biz bu donanım sürecini beklerken yazılım ve TinyML tarafını hiç durdurmadık. Açık veri setinde %82 doğruluğa ulaşan modeli INT8 kuantalayarak ESP32-S3 için `model_data.h` C başlığını ürettik. Core 1 üzerindeki `vTaskTinyMLInference` hard real-time motoru ve DMA ADC sürücüsü hazır; kart lehimlendiği anda ilk saniyeden gerçek zamanlı çalışmaya başlayacak."
+### S3: Donanım Üretimi ile Yazılım/TinyML Hattı Nasıl Eşzamanlı Yürütülmektedir?
+* **Açıklama:** Donanım tarafında 4 kanallı TL084 sEMG dağıtım kartı, gerilim bölücüler ve MPU-6050 montajı için 6 sayfalık delikli pertinaks lehimleme ve montaj kılavuzu tamamlanmıştır (`docs/hardware/emg_hub_lehim_rehberi.pdf`). Donanım lehimleme süreci devam ederken TinyML hattı durdurulmamış; INT8 kuantalanmış modeller için ESP32-S3 C başlıkları (`model_data.h`), Core 1 FreeRTOS çıkarım görevi ve sürekli DMA ADC sürücüsü hazır hale getirilmiştir. Donanım tamamlandığı an sıfır bekleme süresiyle test edilecektir.
 
-### Soru 4: "Sunumda ekstra ne göstereceksiniz?"
-* **Cevap:** "Sadece yapay zeka modelini değil; donanımla eşzamanlı geliştirdiğimiz **Three.js 3D Dijital İkiz Simülasyonumuzu** ve ESP32 Core 0 UDP telemetri altyapımızı da göstereceğiz. Modelin ürettiği hareket kararları, sanal 3D biyonik ele kablosuz olarak aktarılarak parmak hareketleri simüle edilebiliyor."
+### S4: 3D Dijital İkiz Simülasyonunun ve Kablosuz Telemetrinin Projedeki Rolü Nedir?
+* **Açıklama:** Geliştirilen Three.js tabanlı 3D biyonik el simülasyonu ve ESP32 Core 0 UDP telemetri altyapısı, modelin sınıflandırma kararlarını donanım servolarına iletmeden önce sanal ortamda gerçek zamanlı görselleştirmek ve uçtan uca sistem gecikmesini doğrulamak amacıyla kullanılmaktadır.
