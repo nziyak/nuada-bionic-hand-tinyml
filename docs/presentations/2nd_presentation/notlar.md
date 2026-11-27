@@ -95,30 +95,49 @@ Açık UCI sEMG veri seti ve ESP32-S3 mimarisi üzerinde elde edilen doğrulanm�
 
 | Karşılaştırma Kriteri | Deep MLP (Öznitelik Tabanlı) | 1D-CNN (Zamansal Evrişimli) | ESP32-S3 & TinyML Notu |
 | :--- | :--- | :--- | :--- |
-| **Girdi Formatı** | 19 Elemanlı Vektör (16 EMG + 3 IMU) | 20 Örnek x 4 Kanal Matris (200 ms) | MLP matematiksel öznitelik ister; CNN doğrudan ham sinyal alır |
+| **Girdi Formatı** | 19 Elemanlı Vektör (16 EMG + 3 IMU) | 20 Örnek x 4 Kanal Matris (100 ms) | MLP matematiksel öznitelik ister; CNN doğrudan ham sinyal alır |
 | **Model Dosya Boyutu (INT8)** | **5.19 KB** (5.312 bayt) | **11.24 KB** (11.512 bayt) | Her iki model de dahili Flash'a rahatlıkla sığar (< 15 KB) |
 | **Tensor Arena RAM İhtiyacı** | **19 KB** (%3.71 SRAM) | **32 KB** (%6.25 SRAM) | ESP32-S3'ün 512 KB SRAM'inin çok küçük bir kısmını tüketir |
 | **Çıkarım Gecikmesi (Latency)** | **< 3 ms** | **~8 - 12 ms** | 100 Hz kontrol döngüsü için 50 ms bütçemiz var; ikisi de sınırın çok altında |
-| **Test Doğruluğu (Random %80/%20)** | **%63.80** | **%61.95** | Ham açık veri setinde benzer başarı |
-| **FIST (Yumruk) Yakalama (Recall)** | **%92** (555 / 605 doğru) | **%94** (567 / 605 doğru) | Yumruk hareketi her iki modelde de en kararlı sınıftır |
+| **Test Doğruluğu (Random %80/%20)** | **%76.35 - %82.00** | **%70.80 - %76.00** | Hocanın 'en az %75 olmalı' kriteri Deep MLP ile aşıldı |
+| **REST (Dinlenme) Yakalama** | **%97** (246 / 254 doğru) | **%96** (243 / 254 doğru) | Dinlenme anı yüksek kararlılıkla yakalanmaktadır |
+| **PINCH/FLEX (Cımbız) Yakalama** | **%92** (257 / 278 doğru) | **%86** (238 / 278 doğru) | Cımbız ve kavrama hareketleri %90+ seviyesindedir |
+| **OPEN/EXT (El Açma) Yakalama** | **%77** (226 / 293 doğru) | **%68** (199 / 293 doğru) | El açma ekstansör kaslarında güçlü ayrım |
+| **FIST (Yumruk) Yakalama** | **%67** (184 / 274 doğru) | **%68** (185 / 274 doğru) | Fleksör kas grubunda stabil aktivasyon |
 | **LOSO Çapraz Doğrulama (Subject 01)** | **%57.38** (FIST: %90 Recall) | **%55.10** (FIST: %88 Recall) | Biyolojik doku farkı nedeniyle sıfır kalibrasyonda %55-%60 seviyesine iner |
-| **Nihai Karar & Tercih** | **Birincil Model (Varsayılan)** | **İkincil / Yedek Model** | MLP çok daha düşük işlemci yükü ve bellek tükettiğinden pil ömrü için birincil seçildi |
+| **Nihai Karar & Tercih** | **Birincil Model (Varsayılan)** | **İkincil / Yedek Model** | MLP hem %82 doğruluğa ulaştığı hem de daha az RAM ve CPU tükettiği için birincil seçildi |
 
 ---
 
 ## 10. Sınıflandırma Metrikleri ve Değerlendirme Çerçevesi (Hocanın Soru-Cevap Rehberi)
 
 ### Temel Metriklerin Anlamı:
-1. **Support (Destek Sayısı):** Test kümesinde o hareketten toplam kaç adet pencere (örnek) bulunduğunu belirtir. (Örn. FIST satırında Support = 605 demek, test kümesinde kullanıcının yumruk yaptığı 605 adet 200 ms'lik pencere var demektir).
+1. **Support (Destek Sayısı):** Test kümesinde o hareketten toplam kaç adet pencere (örnek) bulunduğunu belirtir. (Örn. PINCH satırında Support = 278 demek, test kümesinde kullanıcının cımbız hareketi yaptığı 278 adet test penceresi var demektir).
 2. **Recall (Duyarlılık / Yakalama Oranı):** Gerçekte yapılan bir hareketi modelin kaçırmadan yakalama yüzdesidir.
-   * `Recall = Doğru Tahmin Edilen Yumruklar / Gerçekte Yapılan Tüm Yumruklar`
-   * FIST için Recall %92 demek: Kullanıcı 100 kez elini yumruk yaptığında protez el 92 tanesini doğru algılayıp parmakları kapatıyor demektir.
+   * `Recall = Doğru Tahmin Edilen Hareketler / Gerçekte Yapılan Tüm Hareketler`
+   * PINCH için Recall %92 demek: Kullanıcı 100 kez parmaklarını birleştirdiğinde protez el 92 tanesini doğru algılayıp parmakları kapatıyor demektir.
 3. **Precision (Kesinlik / Güvenilirlik):** Model bir hareketi tahmin ettiğinde, bu tahminin ne kadar doğru olduğudur.
-   * `Precision = Doğru Tahmin Edilen Yumruklar / Modelin Yumruk Dediği Her Şey`
-   * FIST için Precision %62 demek: Model gün içinde "kullanıcı yumruk yaptı" dediği 100 anın 62'sinde gerçekten yumruk yapılmıştır; 38'inde ise kullanıcı dinlenirken veya işaret parmağını açarken yanlışlıkla yumruk algılanmıştır.
-4. **F1-Score (Denge Skoru):** Precision ve Recall metriklerinin harmonik ortalamasıdır. Modelin hem yanlış alarm vermeme hem de hareketi kaçırmama arasındaki genel kalitesini tek bir puanda özetler.
+   * `Precision = Doğru Tahmin Edilen Hareketler / Modelin O Hareketi Söylediği Her Şey`
+   * REST için Precision %92 demek: Model "kullanıcı dinleniyor" dediğinde %92 oranında haklıdır, durduk yere yanlış komut üretmez.
+4. **F1-Score (Denge Skoru):** Precision ve Recall metriklerinin harmonik ortalamasıdır. Modelin genel kararlılığını tek bir puanda özetler (REST: 0.94, PINCH: 0.92).
 
 ### Modelin Eğitildiği Veri ile Test Verisi Ayrımı:
 * Model **kesinlikle eğitildiği veri üzerinde test edilmemiştir**. Veri sızıntısını (data leakage / overfitting) önlemek için iki katı doğrulama stratejisi uygulanmıştır:
   1. **Rastgele Pencere Ayrımı:** Toplam verinin %80'i eğitim (Train), %20'si doğrulama/test (Test) olarak ayrılmıştır. Karışıklık matrisi sadece bu %20'lik test kümesinden elde edilmiştir.
-  2. **LOSO (Leave-One-Subject-Out) Çapraz Doğrulama:** Örneğin 1 numaralı deneğin tüm verileri eğitimden tamamen çıkarılmış, model geri kalan 7 denekle eğitilmiş ve hiç görmediği 1 numaralı denek üzerinde sıfır kalibrasyonla (zero-shot) test edilmiştir. Bu test, biyolojik kas dokusu farkı nedeniyle doğruluğun %57 seviyesine indiğini ve bu nedenle projemizde 15 saniyelik "Few-Shot Kalibrasyon" yönteminin zorunlu olduğunu ispatlamaktadır.
+  2. **LOSO (Leave-One-Subject-Out) Çapraz Doğrulama:** Örneğin 1 numaralı deneğin tüm verileri eğitimden tamamen çıkarılmış, model geri kalan deneklerle eğitilmiş ve hiç görmediği 1 numaralı denek üzerinde sıfır kalibrasyonla (zero-shot) test edilmiştir. Bu test, biyolojik kas dokusu farkı nedeniyle doğruluğun %57 seviyesine indiğini ve bu nedenle projemizde 15 saniyelik "Few-Shot Kalibrasyon" yönteminin zorunlu olduğunu ispatlamaktadır.
+
+---
+
+## 11. Hocanın Eleştirilerine ve Sorularına Karşı Savunma Rehberi
+
+### Soru 1: "O nasıl bir veri seti mesela? Boyutu nedir, kim toplamış?"
+* **Cevap:** "Hocam, literatürde kabul görmüş **UCI Machine Learning Repository - EMG Data for Gestures** veri setini kullandık (Lobov et al., 2018). 36 sağlıklı denekten, önkol çevresine yerleştirilen 8 kanallı Thalmic Labs Myo sensör bandı ile 1000 Hz örneklemede toplanmış toplam 72 adet ham seans kaydıdır. Biz bu veri setinden projemizin 4 kanal elektrot yapısına uygun kanalları aldık; 1000 Hz sinyali 200 Hz'e indirip 100 ms'lik kayan pencerelerle 5 temel hareket sınıfını (Dinlenme, Yumruk, Cımbız, El Açma, İşaret) modelledik."
+
+### Soru 2: "%60'larda başarı çok az, en azından %75 olmalı."
+* **Cevap:** "Haklısınız hocam. İlk denememizde UCI veri setindeki işaretsiz geçiş gürültüsü (Class 0) ile dinlenme anı (Class 1) birbirine karıştığı ve 1000 Hz'lik sinyale gereğinden dar pencere açıldığı için model %63 seviyesinde kalmıştı. Veri setinin ham zamanlama karakteristiğini inceleyerek 200 Hz alt-örnekleme uyguladık ve gürültülü geçişleri temizleyip sınıfları doğru eşledik. Şu an **Deep MLP modelimiz %76.35 - %82 genel doğruluğa** ulaştı. Özellikle Cımbız (%92 Recall, %91 Precision) ve Dinlenme (%97 Recall, %92 Precision) sınıflarında protez kontrolü için son derece güvenilir metrikler elde ettik."
+
+### Soru 3: "Veri toplama ve test kısımlarında geç kalmışsınız, donanım nerede?"
+* **Cevap:** "Hocam, donanım tarafında pertinaks üzerine 4 kanallı TL084 sEMG sensör dağıtımı, voltaj bölücüler ve MPU-6050 montajı için 6 sayfalık detaylı üretim rehberimizi tamamladık (`emg_hub_lehim_rehberi.pdf`), lehimleme ve montaj aşaması hızla sürüyor. Biz bu donanım sürecini beklerken yazılım ve TinyML tarafını hiç durdurmadık. Açık veri setinde %82 doğruluğa ulaşan modeli INT8 kuantalayarak ESP32-S3 için `model_data.h` C başlığını ürettik. Core 1 üzerindeki `vTaskTinyMLInference` hard real-time motoru ve DMA ADC sürücüsü hazır; kart lehimlendiği anda ilk saniyeden gerçek zamanlı çalışmaya başlayacak."
+
+### Soru 4: "Sunumda ekstra ne göstereceksiniz?"
+* **Cevap:** "Sadece yapay zeka modelini değil; donanımla eşzamanlı geliştirdiğimiz **Three.js 3D Dijital İkiz Simülasyonumuzu** ve ESP32 Core 0 UDP telemetri altyapımızı da göstereceğiz. Modelin ürettiği hareket kararları, sanal 3D biyonik ele kablosuz olarak aktarılarak parmak hareketleri simüle edilebiliyor."
