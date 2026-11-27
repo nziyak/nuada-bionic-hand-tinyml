@@ -51,9 +51,9 @@ except ImportError:
 GESTURE_CLASSES = {
     0: "REST (Dinlenme)",
     1: "FIST (Yumruk - FDS)",
-    2: "OPEN (El Acik - ED)",
-    3: "PINCH (Cimbiz - FPL)",
-    4: "POINT (Isaret - ED+EPL)"
+    2: "PINCH/FLEX (Cimbiz - FPL)",
+    3: "OPEN/EXT (El Acik - ED)",
+    4: "POINT/DEV (Isaret - EPL)"
 }
 
 
@@ -171,26 +171,35 @@ def load_csv_dataset(dataset_dir: str, max_files: int = 16) -> Tuple[Any, Any, A
         raw_imu = df[imu_cols].values if len(imu_cols) == 3 else np.zeros((len(df), 3), dtype=np.float32)
         raw_labels = df[label_cols[0]].values
 
-        # Kayan pencereleme (20 örnek pencere = 200 ms, 10 örnek adım = 100 ms)
-        for i in range(0, len(df) - 20, 10):
-            lbl = int(raw_labels[i + 10])
-            # Sadece 0-4 arası sınıfları al (veya 1-5'i 0-4'e eşle)
-            if lbl not in [0, 1, 2, 3, 4]:
-                if lbl in [5, 6, 7]:
-                    lbl = 4
-                else:
-                    continue
+        # UCI sEMG Benchmark tespiti ve doğru sınıf eşlemesi:
+        # UCI formatında: 0=İşaretsiz/geçiş, 1=Dinlenme, 2=Yumruk, 3=Bilek Flexion, 4=Bilek Extension, 5=Radyal Sapma
+        unique_lbls = set(np.unique(raw_labels))
+        is_uci = (unique_lbls.intersection({5, 6, 7}) != set()) or (0 in unique_lbls and 1 in unique_lbls and 2 in unique_lbls and len(df) > 10000)
 
-            # Sınıf Dengeleme (Undersampling): REST (0) sınıfı açık veri setlerinde %70-80 oranında baskındır.
-            # Modelin 'her şeye REST deyip %65 başarı alarak tembellik yapmasını (majority class collapse)'
-            # engellemek için REST pencerelerini hareket pencereleriyle dengeliyoruz:
-            if lbl == 0 and (i % 100 != 0):
-                continue
+        if is_uci:
+            # UCI verisi 1000 Hz'dir. 5'te 1 oranında alt-örnekleme (downsampling) ile 200 Hz'e indirilir.
+            raw_emg = raw_emg[::5]
+            raw_labels = raw_labels[::5]
+            raw_imu = raw_imu[::5]
+            uci_map = {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}
 
-            all_emg_windows.append(raw_emg[i:i + 20])
-            all_imu_windows.append(raw_imu[i:i + 20])
-            all_labels.append(lbl)
-            all_subjects.append(subject_id)
+            # 20 örnek pencere (100 ms @ 200 Hz), 8 örnek kayma adımı (40 ms)
+            for i in range(0, len(raw_emg) - 20, 8):
+                c = int(raw_labels[i + 10])
+                if c in uci_map:
+                    all_emg_windows.append(raw_emg[i:i + 20])
+                    all_imu_windows.append(raw_imu[i:i + 20])
+                    all_labels.append(uci_map[c])
+                    all_subjects.append(subject_id)
+        else:
+            # Standart Nuada 100 Hz kayıt formatı (20 örnek = 200 ms)
+            for i in range(0, len(raw_emg) - 20, 10):
+                lbl = int(raw_labels[i + 10])
+                if lbl in [0, 1, 2, 3, 4]:
+                    all_emg_windows.append(raw_emg[i:i + 20])
+                    all_imu_windows.append(raw_imu[i:i + 20])
+                    all_labels.append(lbl)
+                    all_subjects.append(subject_id)
 
     if not all_emg_windows:
         raise ValueError(f"'{dataset_dir}' içindeki dosyalardan geçerli veri penceresi çıkarılamadı!")
