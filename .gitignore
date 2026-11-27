@@ -40,6 +40,11 @@ venv.bak/
 *.tflite
 *.h5
 
-# Dataset files (large CSVs)
+# Dataset files (large CSVs & public datasets)
 data/*.csv
 data/**/*.csv
+data/public_emg/
+
+# Internal archives & scratch notes
+docs/archive/
+docs/faturalar/
