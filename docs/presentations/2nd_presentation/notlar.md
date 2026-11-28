@@ -105,6 +105,7 @@ Açık UCI sEMG veri seti ve ESP32-S3 mimarisi üzerinde elde edilen doğrulanm�
 | **OPEN/EXT (El Açma) Yakalama** | **%77** (226 / 293 doğru) | **%68** (199 / 293 doğru) | El açma ekstansör kaslarında güçlü ayrım |
 | **FIST (Yumruk) Yakalama** | **%67** (184 / 274 doğru) | **%68** (185 / 274 doğru) | Fleksör kas grubunda stabil aktivasyon |
 | **LOSO Çapraz Doğrulama (Subject 01)** | **%57.38** (FIST: %90 Recall) | **%55.10** (FIST: %88 Recall) | Biyolojik doku farkı nedeniyle sıfır kalibrasyonda %55-%60 seviyesine iner |
+| **Gürültü Enjeksiyonu ile Doğruluk (Robustness)** | **%76.86** (FIST: %72, PINCH: %91) | **%71.50** (PINCH: %85) | %5 yapay Gauss gürültüsü altında bile başarım korunmaktadır |
 | **Nihai Karar & Tercih** | **Birincil Model (Varsayılan)** | **İkincil / Yedek Model** | MLP hem %82 doğruluğa ulaştığı hem de daha az RAM ve CPU tükettiği için birincil seçildi |
 
 ---
@@ -141,3 +142,6 @@ Açık UCI sEMG veri seti ve ESP32-S3 mimarisi üzerinde elde edilen doğrulanm�
 
 ### S4: 3D Dijital İkiz Simülasyonunun ve Kablosuz Telemetrinin Projedeki Rolü Nedir?
 * **Açıklama:** Geliştirilen Three.js tabanlı 3D biyonik el simülasyonu ve ESP32 Core 0 UDP telemetri altyapısı, modelin sınıflandırma kararlarını donanım servolarına iletmeden önce sanal ortamda gerçek zamanlı görselleştirmek ve uçtan uca sistem gecikmesini doğrulamak amacıyla kullanılmaktadır.
+
+### S5: Modele Yapay Gürültü Enjeksiyonu (Data Augmentation) Uygulandı mı?
+* **Açıklama:** Evet. Gerçek dünyadaki elektrot temassızlığı, kas titremesi ve çevresel gürültülere karşı modelin gürbüzlüğünü (noise robustness) artırmak amacıyla eğitim kümesine kontrollü Gauss beyaz gürültüsü eklenmiştir (standart sapma = 0.05). Model gürültü altında dahi **%76.86 genel doğruluğunu** korumuş, aşırı öğrenmeyi (overfitting) engelleyerek FIST yakalama duyarlılığını %67'den %72'ye çıkarmıştır.
