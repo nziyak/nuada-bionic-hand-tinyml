@@ -26,11 +26,11 @@ Resmi proje şartnamesi ve onaylanan görev dağılımı ([anatomy_and_signal_ac
 Açık veri setleri (open datasets) ile kendi donanımımız arasında sinyal tipi farkı bulunmaktadır:
 
 1. **Open Datasets (Raw AC Signal):**
-   Sinyal referans hattı (0V) etrafında hem pozitif (+) hem negatif (-) salınım yapar. Bu nedenle klasik Hudgins özniteliklerindeki **Zero Crossing (ZC)** anlamlı bilgi üretir.
+   Sinyal referans hattı (0V) etrafında hem pozitif (+) hem negatif (-) salınım yapar. Bu nedenle klasik Hudgins feature'larındaki **Zero Crossing (ZC)** anlamlı bilgi üretir.
 2. **Custom Hardware (TL084 Envelope Signal):**
    Sensör üzerindeki full-wave rectifier ve low-pass filter devresi sinyali doğrultup düzleştirerek `0 - 3.3 V` aralığında pozitif bir DC envelope üretir. Sinyal sıfır çizgisini kesmediği için **ZC değeri daima 0 çıkar**.
 3. **Universal 19-Feature Vector Çözümü:**
-   Boru hattında ZC yerine hem raw AC sinyalde hem de DC envelope sinyalinde kararlı çalışan öznitelikler seçilmiştir:
+   Boru hattında ZC yerine hem raw AC sinyalde hem de DC envelope sinyalinde kararlı çalışan feature'lar seçilmiştir:
    - **4 EMG Channels x 4 Features = 16 Features:**
      - **MAV (Mean Absolute Value):** Kas kasılma şiddeti genlik ortalaması.
      - **RMS (Root Mean Square):** Sinyalin karesel ortalama karekökü; sinyal gücü ve enerjisi.

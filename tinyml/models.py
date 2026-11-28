@@ -11,7 +11,7 @@ motoru için özel olarak optimize edilmiş derin yapay zeka modellerini içerir
 Modeller:
 1. build_1d_cnn(): 200 ms (20 örnek x 4 kanal) ham/zarf zaman serisi pencerelerini
    doğrudan işleyen zamansal evrişimli (1D-CNN) derin öğrenme ağı.
-2. build_deep_mlp(): 19 elemanlı evrensel öznitelik vektörünü (MAV, RMS, VAR, MFD, IMU)
+2. build_deep_mlp(): 19 elemanlı evrensel feature vektörünü (MAV, RMS, VAR, MFD, IMU)
    işleyen çok katmanlı yapay sinir ağı (MLP).
 
 TFLite Micro Uyumluluk Kuralları:

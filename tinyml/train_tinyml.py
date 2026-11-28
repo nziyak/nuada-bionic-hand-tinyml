@@ -8,11 +8,11 @@ Project: Nuada Bionic Hand Movement Estimation via TinyML
 
 Bu script:
 1. Veri setini yükler (CSV formatında gerçek kayıtlar veya --mock bayrağıyla sentetik veriler).
-2. 200 ms kayan pencereleme ve 19 öznitelikli evrensel öznitelik çıkarımını uygular.
-3. 1D-CNN veya Derin MLP modelini eğitir.
-4. Test seti üzerinde Doğruluk (Accuracy) ve Sınıflandırma Metriklerini hesaplar.
-5. Modeli TFLite INT8 Post-Training Quantization (PTQ) ile 8-bit tam sayıya sıkıştırır.
-6. ESP32-S3 C/C++ firmware için doğrudan kullanılabilir 'model_data.h' C başlık dosyasını üretir.
+2. 200 ms sliding window ve 19 feature'lı evrensel vektör çıkarımını uygular.
+3. 1D-CNN veya Deep MLP modelini eğitir.
+4. Test seti üzerinde Accuracy ve Sınıflandırma Metriklerini hesaplar.
+5. Modeli TFLite INT8 Post-Training Quantization (PTQ) ile sıkıştırır.
+6. ESP32-S3 C/C++ firmware için doğrudan kullanılabilir 'model_data.h' C header dosyasını üretir.
 
 Kullanım Örnekleri:
     # Sentetik veri ile test ve C başlığı üretme:
@@ -208,12 +208,12 @@ def load_csv_dataset(dataset_dir: str, max_files: int = 16) -> Tuple[Any, Any, A
 
 
 # ==============================================================================
-# 2. INT8 KUANTALAMA VE C BAŞLIĞI ÜRETİMİ
+# 2. INT8 QUANTIZATION VE C HEADER ÜRETİMİ
 # ==============================================================================
 
 def export_c_header(tflite_bytes: bytes, output_path: str, model_name: str = "nuada_model"):
     """
-    .tflite ikili model baytlarını C/C++ uyumlu 'model_data.h' başlık dosyasına dönüştürür.
+    .tflite ikili model baytlarını C/C++ uyumlu 'model_data.h' header dosyasına dönüştürür.
     """
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     hex_lines = []
@@ -253,7 +253,7 @@ const unsigned int g_{model_name}_len = {len(tflite_bytes)};
 """
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(header_content)
-    print(f"[OK] C baslik dosyasi basariyla olusturuldu: {output_path} ({len(tflite_bytes)} bayt)")
+    print(f"[OK] C header dosyasi basariyla olusturuldu: {output_path} ({len(tflite_bytes)} bayt)")
 
 
 # ==============================================================================
@@ -265,7 +265,7 @@ def run_pipeline(args):
         print("\n" + "="*70)
         print("  [BILGI] Gerekli Python kutuphaneleri (numpy, tensorflow) henuz yuklu degil!")
         print("="*70)
-        print("  train_tinyml.py derin ogrenme modelini egitmek ve INT8 kuantalama")
+        print("  train_tinyml.py model eğitimi ve INT8 quantization")
         print("  yapmak icin TensorFlow ve NumPy kutuphanelerine ihtiyac duyar.")
         print("\n  Cozum (Sanal ortami kurun veya aktif edin):")
         print("    cd /home/zia/Documents/school/graduation-project/nuada/nuada-bionic-hand-tinyml/tinyml")
@@ -277,12 +277,12 @@ def run_pipeline(args):
         sys.exit(1)
 
     print("==================================================================")
-    print("      NUADA TINYML MODEL EĞİTİM & INT8 KUANTALAMA HATTI          ")
+    print("      NUADA TINYML MODEL EĞİTİM & INT8 QUANTIZATION HATTI         ")
     print("==================================================================")
     print(f"Model Tipi     : {args.model_type.upper()}")
     print(f"Epok Sayısı    : {args.epochs}")
-    print(f"Paket Boyutu   : {args.batch_size}")
-    print(f"Kuantalama     : {'Açık (INT8 PTQ)' if args.quantize else 'Kapalı (Float32)'}")
+    print(f"Batch Boyutu   : {args.batch_size}")
+    print(f"Quantization   : {'Aktif (INT8 PTQ)' if args.quantize else 'Devre Dışı (Float32)'}")
 
     # 1. Veri Yükleme
     if args.mock or not args.dataset_dir:
@@ -296,7 +296,7 @@ def run_pipeline(args):
 
     # 2. Model Tipine Göre Giriş Matrisi Hazırlığı
     if args.model_type == "mlp":
-        print("[ISLEM] 19 elemanlı evrensel öznitelik vektörleri çıkarılıyor...")
+        print("[ISLEM] 19 elemanlı evrensel feature vektörleri çıkarılıyor...")
         feat_list = []
         for i in range(len(x_emg)):
             feats = extract_window_features(x_emg[i], x_imu[i])
@@ -388,7 +388,7 @@ def run_pipeline(args):
     except ImportError:
         pass
 
-    # 7. TFLite & INT8 Kuantalama
+    # 7. TFLite & INT8 Quantization
     if args.quantize:
         print("\n--- INT8 Post-Training Quantization (PTQ) Uygulanıyor ---")
         converter = tf.lite.TFLiteConverter.from_keras_model(model)
@@ -408,9 +408,9 @@ def run_pipeline(args):
         tflite_path = f"nuada_{args.model_type}_int8.tflite"
         with open(tflite_path, "wb") as f:
             f.write(tflite_model)
-        print(f"[OK] Kuantalanmış INT8 TFLite Modeli Kaydedildi: {tflite_path} ({len(tflite_model)} bayt)")
+        print(f"[OK] Quantized INT8 TFLite Modeli Kaydedildi: {tflite_path} ({len(tflite_model)} bayt)")
 
-        # C Başlığı Yazma
+        # C Header Yazma
         if args.output_header:
             export_c_header(tflite_model, args.output_header, model_name=f"nuada_{args.model_type}")
     else:
@@ -426,31 +426,34 @@ def run_pipeline(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Nuada TinyML Eğitimi ve Kuantalama Scripti")
-    parser.add_argument("--model_type", type=str, choices=["mlp", "cnn"], default="mlp",
-                        help="Model mimarisi: 'mlp' (19 öznitelikli) veya 'cnn' (1D-CNN zaman serisi)")
-    parser.add_argument("--dataset_dir", type=str, default="",
+    parser = argparse.ArgumentParser(
+        description="Nuada TinyML Training & INT8 Quantization Pipeline",
+        formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=32),
+    )
+    parser.add_argument("--model_type", type=str, choices=["mlp", "cnn"], default="mlp", metavar="TYPE",
+                        help="Model mimarisi: 'mlp' (19 feature) veya 'cnn' (1D-CNN)")
+    parser.add_argument("--dataset_dir", type=str, default="", metavar="DIR",
                         help="CSV veri setinin bulunduğu klasör yolu")
-    parser.add_argument("--epochs", type=int, default=25,
+    parser.add_argument("--epochs", type=int, default=25, metavar="N",
                         help="Eğitim epok sayısı")
-    parser.add_argument("--batch_size", type=int, default=32,
-                        help="Toplu veri boyutu")
+    parser.add_argument("--batch_size", type=int, default=32, metavar="N",
+                        help="Batch boyutu")
     parser.add_argument("--quantize", action="store_true", default=True,
                         help="INT8 Post-Training Quantization uygula")
-    parser.add_argument("--output_header", type=str, default="model_data.h",
-                        help="Üretilecek C başlık dosyasının yolu")
+    parser.add_argument("--output_header", type=str, default="model_data.h", metavar="FILE",
+                        help="Üretilecek C header dosyasının yolu")
     parser.add_argument("--mock", action="store_true", default=False,
                         help="Gerçek veri yoksa sentetik fizyolojik veri üret")
-    parser.add_argument("--samples_per_class", type=int, default=150,
-                        help="Mock modunda sınıf başına üretilecek pencere sayısı")
-    parser.add_argument("--split_strategy", type=str, choices=["random", "loso"], default="random",
-                        help="Veri ayırma stratejisi: 'random' (pencere bazlı %%80/%%20) veya 'loso' (Leave-One-Subject-Out)")
-    parser.add_argument("--test_subject", type=str, default="01",
-                        help="LOSO stratejisinde test için tamamen dışarıda bırakılacak denek ID'si (ör. '01', '02')")
+    parser.add_argument("--samples_per_class", type=int, default=150, metavar="N",
+                        help="Mock modunda sınıf başına pencere sayısı")
+    parser.add_argument("--split_strategy", type=str, choices=["random", "loso"], default="random", metavar="STRAT",
+                        help="Veri ayırma: 'random' (%%80/%%20) veya 'loso' (LOSO)")
+    parser.add_argument("--test_subject", type=str, default="01", metavar="ID",
+                        help="LOSO için test denek ID'si (ör. '01', '02')")
     parser.add_argument("--add_noise", action="store_true", default=False,
-                        help="Eğitim setine kontrollü yapay Gauss gürültüsü ekle (Noise Robustness / Data Augmentation)")
-    parser.add_argument("--noise_level", type=float, default=0.05,
-                        help="Eklenecek gürültünün standart sapması (varsayılan: 0.05)")
+                        help="Eğitim setine Gauss gürültüsü ekle (Noise Robustness)")
+    parser.add_argument("--noise_level", type=float, default=0.05, metavar="STD",
+                        help="Eklenen gürültünün standart sapması (varsayılan: 0.05)")
 
     cli_args = parser.parse_args()
     run_pipeline(cli_args)

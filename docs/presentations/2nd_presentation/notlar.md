@@ -44,28 +44,28 @@ Bu dosya, Salı 1 Aralık saat 22:00'ye kadar yüklenecek olan 6 dakikalık 2. A
 
 ---
 
-## 5. Sinyal Tipi ve 19-Öznitelikli Evrensel Vektör
-* **Zarf (Envelope) Sensör Farkı:** Yeni aldığımız TL084 tabanlı sensör donanımsal doğrultma ve filtreleme yaparak 0 - 3.3 V pozitif DC zarf üretir; sinyal sıfırın altına inmez.
+## 5. Sinyal Tipi ve 19-Feature Evrensel Vektör
+* **Zarf (Envelope) Sensör Farkı:** Yeni aldığımız TL084 tabanlı sensör donanımsal doğrultma ve filtreleme yaparak 0 - 3.3 V pozitif DC envelope üretir; sinyal sıfırın altına inmez.
 * **ZC Düzeltmesi:** Sinyal sıfırı kesmediği için klasik Hudgins ZC (Zero Crossing) daima 0 çıkar. ZC yerine türev/eğim ölçen **MFD (Mean First Difference)** kullanıyoruz.
 * **19 Elemanlı Vektör Yapısı:**
-  * 4 EMG Kanalı x 4 Öznitelik = 16 Öznitelik (MAV, RMS, VAR, MFD).
-  * 3 IMU Ekseni = 3 Öznitelik (Ortalama ax, ay, az - kolun yerçekimine göre uzamsal açısı).
-* **Avantajı:** Hem açık veri setlerindeki ham AC sinyallerde hem de kendi donanımımızın DC zarf sinyallerinde kod değiştirmeden çalışır.
+  * 4 EMG Kanalı x 4 Feature = 16 Feature (MAV, RMS, VAR, MFD).
+  * 3 IMU Ekseni = 3 Feature (Ortalama ax, ay, az - kolun yerçekimine göre uzamsal açısı).
+* **Avantajı:** Hem açık veri setlerindeki ham AC sinyallerde hem de kendi donanımımızın DC envelope sinyallerinde kod değiştirmeden çalışır.
 
 ---
 
 ## 6. Görev Dağılımı ve Sunum Konuları
 
 ### Nuri Ziya Kırtepe (TinyML, Hard RTOS & Yüksek Hızlı Örnekleme):
-* **Zaman Serisi & Pencereleme:** 100 Hz örneklemede 200 ms kayan pencere (20 örnek) ve 50 ms kayma adımı (%75 örtüşme).
-* **Model Mimarileri:** 1D-CNN (zamansal evrişim) ve Derin MLP (19 öznitelikli).
-* **Model Kuantalama:** TensorFlow Lite INT8 Post-Training Quantization (PTQ) ile model boyutunu 4 kat küçültme.
-* **Gömülü Sistem Başarımı:** ESP32-S3 Core 1 üzerinde `vTaskTinyMLInference` hard real-time task; ESP-NN vektör hızlandırması ile < 15 ms çıkarım süresi, < 25 KB Tensor Arena RAM.
+* **Zaman Serisi & Sliding Window:** 100 Hz örneklemede 200 ms sliding window (20 örnek) ve 50 ms step (%75 overlap).
+* **Model Mimarileri:** 1D-CNN (zamansal evrişim) ve Deep MLP (19 feature'lı).
+* **Model Quantization:** TensorFlow Lite INT8 Post-Training Quantization (PTQ) ile model boyutunu 4 kat küçültme.
+* **Gömülü Sistem Başarımı:** ESP32-S3 Core 1 üzerinde `vTaskTinyMLInference` hard real-time task; ESP-NN vektör hızlandırması ile < 15 ms latency, < 25 KB Tensor Arena RAM.
 * **Veri Toplama:** Continuous DMA ADC sürücüsü ve `record_live_emg.py` otomatik kayıt aracı.
 
 ### Evrim Doğa Solmaz (Donanım, Gömülü DSP, Kinematik & Simülasyon):
 * **Donanım & Dağıtım Kartı:** Pertinaks üzerine 4-kanallı TL084 sEMG sensör dağıtımı, dirençli gerilim bölücüler ve MPU-6050 montajı.
-* **Gömülü C++ DSP:** 20 - 450 Hz IIR bant geçiren filtre ve 50 Hz çentik (notch) filtre basamakları.
+* **Gömülü C++ DSP:** 20 - 450 Hz IIR bant geçiren filtre ve 50 Hz notch filtre basamakları.
 * **IMU Kinematik Füzyon:** MPU-6050 Complementary / Madgwick filtresiyle kolun uzamsal açısının (pitch/roll) gerçek zamanlı takibi.
 * **Kablosuz Telemetri & Dijital İkiz:** FreeRTOS Core 0 soft real-time task'ları (LwIP UDP) ve Three.js 3D sanal biyonik el simülasyonu.
 
@@ -80,32 +80,42 @@ Bu dosya, Salı 1 Aralık saat 22:00'ye kadar yüklenecek olan 6 dakikalık 2. A
 
 ---
 
-## 8. Donanımsız Doğrulama: Açık Veri Setleri (Public Benchmark) Stratejisi
-* **Donanım Beklenirken Yapılanlar:** Donanım lehimleme ve montaj sürecindeyken TinyML boru hattı durmadı; internetteki açık veri setleri üzerinde uçtan uca test ediliyor.
-* **Kullanılan Açık Veri Setleri:**
-  * **UCI EMG Data for Gestures:** 36 denek, ön kol 8 kanal sEMG, CSV formatında açık veri -> [https://archive.ics.uci.edu/dataset/612/emg+data+for+gestures](https://archive.ics.uci.edu/dataset/612/emg+data+for+gestures).
-  * **NinaPro Benchmark (DB2):** 40 denek, el/bilek hareketleri referans veritabanı -> [https://ninapro.hevs.ch](https://ninapro.hevs.ch).
-* **Doğrulama Amacı:** 19 elemanlı evrensel öznitelik formülasyonunun ve INT8 PTQ kuantalamanın gerçek denek verilerinde çalıştığını kanıtlamak, eğitim/doğruluk eğrilerini ve Confusion Matrix'i sunuma eklemek.
-* **Hemen Dağıtım Avantajı:** ESP32 kartı Evrim'den teslim alındığı an sıfırdan model geliştirmeye gerek kalmadan, üretilen `model_data.h` C başlığı doğrudan firmware'e yüklenip ilk saniyeden çalıştırılabilecek.
+## 8. Açık Veri Setleri: UCI vs. NinaPro Benchmark Karşılaştırması ve Seçim Gerekçesi
+
+Donanım kartının lehimleme ve montaj süreci devam ederken TinyML boru hattımızı doğrulamak adına açık veri setlerinden yararlandık. Literatürde öne çıkan iki ana veri seti (NinaPro DB2 ve UCI EMG Data for Gestures) incelenmiş ve bu aşamada **UCI veri seti seçilmiştir**:
+
+| Kriter | UCI EMG Data for Gestures (Lobov et al., 2018) | NinaPro Benchmark DB2 (Atzori et al., 2014) | Nuada Projesi İçin Değerlendirme & Seçim Nedeni |
+| :--- | :--- | :--- | :--- |
+| **Dosya Formatı & Boyut** | **Hafif CSV Formatı** (~50 MB, metin tabanlı) | **Ağır MATLAB `.mat` Dosyaları** (Onlarca GB) | UCI doğrudan Python/Pandas ile birkaç saniyede okunur; NinaPro günlerce süren indirme ve karmaşık MATLAB ayrıştırması gerektirir. |
+| **Denek Sayısı** | **36 Sağlıklı Denek** (72 seans ham kayıt) | **40 Denek** (Sağlıklı ve ampüte) | İkisi de istatistiksel genelleme için yeterlidir; 36 denek LOSO doğrulaması için zengin bir çeşitlilik sunar. |
+| **Kanal Yapısı** | **8 Kanal Dairesel sEMG** (Thalmic Myo) | **12 Kanal Kablolu Delsys Sistemi** | UCI'dan seçtiğimiz ardışık 4 kanal, kendi 4-kanallı donanım kısıtımıza birebir uyarlanabilmektedir. |
+| **Hareket Sınıfları** | **5 Temel El Hareketi** (Rest, Fist, Pinch, Open, Point) | **40+ Karmaşık Hareket** (Kombinasyonel parmak hareketleri) | UCI sınıfları biyonik elimizin 3-DOF mekanik yapısıyla (Rest, Fist, Pinch, Open, Point) birebir eşleşir. |
+| **Sinyal Karakteristiği** | **Ham 1000 Hz AC Zaman Serisi** | **2000 Hz Ham Sinyal** | UCI ham veri sunduğu için kendi 200 Hz downsampling, sliding window ve 19-feature pipeline'ımızı gerçekçi biçimde test etmemizi sağladı. |
+| **Stratejik Hız & Değer** | **Anında Uçtan Uca Doğrulama** | **Uzun Ön-İşleme Süreci** | Saatler içinde INT8 quantization tamamlanıp ESP32 C header'ı (`model_data.h`) üretilmiştir. |
+
+### Sunumda Vurgulanacak Seçim Özeti:
+1. **Mimari Doğrulama:** Donanım beklenirken yazılım ekibi boş durmadı; 19-feature evrensel vektörü, INT8 PTQ quantization ve ESP32 C header üretim hattı gerçek insan verileriyle test edildi ve %82 doğruluğa ulaşıldı.
+2. **Kanal & Sınıf Uyumu:** UCI'daki 8 kanaldan 4'ü seçilerek donanımımızın 4-kanal kısıtı modellendi; sınıflar hedef 5 hareketimizle birebir eşleştirildi.
+3. **Sıfır Entegrasyon Maliyeti:** Lehimlenen karttan ilk canlı veri kaydedildiği gün (`record_live_emg.py`), pipeline kodunda tek bir satır dahi değiştirilmeden aynı script ile model anında kendi sensörlerimize adapte edilecek.
 
 ---
 
 ## 9. 1D-CNN vs. Deep MLP Karşılaştırma Tablosu (Nuri Ziya'nın Slaytı)
 Açık UCI sEMG veri seti ve ESP32-S3 mimarisi üzerinde elde edilen doğrulanmış karşılaştırma metrikleri:
 
-| Karşılaştırma Kriteri | Deep MLP (Öznitelik Tabanlı) | 1D-CNN (Zamansal Evrişimli) | ESP32-S3 & TinyML Notu |
+| Karşılaştırma Kriteri | Deep MLP (Feature Tabanlı) | 1D-CNN (Zamansal Evrişimli) | ESP32-S3 & TinyML Notu |
 | :--- | :--- | :--- | :--- |
-| **Girdi Formatı** | 19 Elemanlı Vektör (16 EMG + 3 IMU) | 20 Örnek x 4 Kanal Matris (100 ms) | MLP matematiksel öznitelik ister; CNN doğrudan ham sinyal alır |
+| **Girdi Formatı** | 19 Elemanlı Vektör (16 EMG + 3 IMU) | 20 Örnek x 4 Kanal Matris (100 ms) | MLP matematiksel feature vektörü ister; CNN doğrudan ham sinyal alır |
 | **Model Dosya Boyutu (INT8)** | **5.19 KB** (5.312 bayt) | **11.24 KB** (11.512 bayt) | Her iki model de dahili Flash'a rahatlıkla sığar (< 15 KB) |
 | **Tensor Arena RAM İhtiyacı** | **19 KB** (%3.71 SRAM) | **32 KB** (%6.25 SRAM) | ESP32-S3'ün 512 KB SRAM'inin çok küçük bir kısmını tüketir |
-| **Çıkarım Gecikmesi (Latency)** | **< 3 ms** | **~8 - 12 ms** | 100 Hz kontrol döngüsü için 50 ms bütçemiz var; ikisi de sınırın çok altında |
-| **Test Doğruluğu (Random %80/%20)** | **%76.35 - %82.00** | **%70.80 - %76.00** | Fizyolojik alt-örnekleme ve doğru sınıf eşlemesi ile yüksek doğruluk |
+| **Çıkarım Latency** | **< 3 ms** | **~8 - 12 ms** | 100 Hz kontrol döngüsü için 50 ms bütçemiz var; ikisi de sınırın çok altında |
+| **Test Doğruluğu (Random %80/%20)** | **%76.35 - %82.00** | **%70.80 - %76.00** | Fizyolojik downsampling ve doğru sınıf eşlemesi ile yüksek doğruluk |
 | **REST (Dinlenme) Yakalama** | **%97** (246 / 254 doğru) | **%96** (243 / 254 doğru) | Dinlenme anı yüksek kararlılıkla yakalanmaktadır |
 | **PINCH/FLEX (Cımbız) Yakalama** | **%92** (257 / 278 doğru) | **%86** (238 / 278 doğru) | Cımbız ve kavrama hareketleri %90+ seviyesindedir |
 | **OPEN/EXT (El Açma) Yakalama** | **%77** (226 / 293 doğru) | **%68** (199 / 293 doğru) | El açma ekstansör kaslarında güçlü ayrım |
 | **FIST (Yumruk) Yakalama** | **%67** (184 / 274 doğru) | **%68** (185 / 274 doğru) | Fleksör kas grubunda stabil aktivasyon |
 | **LOSO Çapraz Doğrulama (Subject 01)** | **%57.38** (FIST: %90 Recall) | **%55.10** (FIST: %88 Recall) | Biyolojik doku farkı nedeniyle sıfır kalibrasyonda %55-%60 seviyesine iner |
-| **Gürültü Enjeksiyonu ile Doğruluk (Robustness)** | **%76.86** (FIST: %72, PINCH: %91) | **%71.50** (PINCH: %85) | %5 yapay Gauss gürültüsü altında bile başarım korunmaktadır |
+| **Noise Robustness Testi** | **%76.86** (FIST: %72, PINCH: %91) | **%71.50** (PINCH: %85) | %5 yapay Gauss gürültüsü altında bile başarım korunmaktadır |
 | **Nihai Karar & Tercih** | **Birincil Model (Varsayılan)** | **İkincil / Yedek Model** | MLP hem %82 doğruluğa ulaştığı hem de daha az RAM ve CPU tükettiği için birincil seçildi |
 
 ---

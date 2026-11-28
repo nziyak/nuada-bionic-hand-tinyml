@@ -5,20 +5,20 @@ Nuada TinyML - Universal Feature Extraction Library
 Author: Nuri Ziya Kırtepe
 Project: Nuada Bionic Hand Movement Estimation via TinyML
 
-Bu modül, sEMG ve IMU zaman serisi verilerinden 200 ms kayan pencere (sliding window)
+Bu modül, sEMG ve IMU zaman serisi verilerinden 200 ms sliding window
 üzerinde hem ham AC sinyallerinde hem de TL084 donanımsal zarf (envelope) DC sinyallerinde
-kararlı çalışan 19 öznitelikli evrensel öznitelik vektörünü çıkarır.
+kararlı çalışan 19 elemanlı evrensel feature vektörünü çıkarır.
 
-Öznitelik Seçimi Gerekçesi (Zarf ve Ham Sinyal Uyumluluğu):
-- Klasik Hudgins ZC (Zero Crossing) zarf sinyalinde hep 0 çıkar çünkü sinyal 0-3.3V DC arasındadır.
+Feature Seçimi Gerekçesi (Envelope ve Ham Sinyal Uyumluluğu):
+- Klasik Hudgins ZC (Zero Crossing) envelope sinyalinde hep 0 çıkar çünkü sinyal 0-3.3V DC arasındadır.
 - ZC yerine MFD (Mean First Difference / Slope) seçilmiştir.
-- 4 EMG Kanalı x 4 Öznitelik = 16 EMG Özniteliği:
+- 4 EMG Kanalı x 4 Feature = 16 EMG Feature'ı:
     1. MAV: Mean Absolute Value (Kas kasılma şiddeti)
     2. RMS: Root Mean Square (Sinyal enerjisi ve gücü)
     3. VAR: Variance (Güç dağılımı / varyans)
     4. MFD: Mean First Difference (Sinyal değişim hızı / türev eğimi)
-- 3 IMU Ekseni x 1 Öznitelik = 3 IMU Özniteliği:
-    1. Mean(ax), Mean(ay), Mean(az) (Kolun yerçekimine göre uzamsal duruşu)
+- 3 IMU Ekseni x 1 Feature = 3 IMU Feature'ı:
+    1. Mean(ax), Mean(ay), Mean(az) (Kolun yerçekimine göre uzamsal açısı)
 - Toplam Boyut: 19 Elemanlı Vektör
 """
 
@@ -91,14 +91,14 @@ def extract_window_features(
     imu_window: Union[List[List[float]], "np.ndarray", None] = None
 ) -> List[float]:
     """
-    200 ms'lik bir veri penceresinden 19 elemanlı öznitelik vektörünü çıkarır.
+    200 ms'lik bir veri penceresinden 19 elemanlı feature vektörünü çıkarır.
 
     Parametreler:
         emg_window: (N, 4) boyutunda 4 kanallı EMG penceresi (N örnek, varsayılan 20).
         imu_window: (N, 3) boyutunda 3 eksenli IMU penceresi (ax, ay, az). None olabilir.
 
     Dönüş:
-        19 elemanlı öznitelik listesi:
+        19 elemanlı feature listesi:
         [CH1_MAV, CH1_RMS, CH1_VAR, CH1_MFD,
          CH2_MAV, CH2_RMS, CH2_VAR, CH2_MFD,
          CH3_MAV, CH3_RMS, CH3_VAR, CH3_MFD,

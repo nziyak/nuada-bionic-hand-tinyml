@@ -7,7 +7,7 @@ Project: Nuada Bionic Hand Movement Estimation via TinyML
 
 Bu araç:
 1. Üretilen .tflite model dosyasının Flash ayak izini (KB) inceler.
-2. Giriş/çıkış tensör tiplerini (INT8 / Float32) ve kuantalama parametrelerini (Scale, Zero Point) doğrular.
+2. Giriş/çıkış tensör tiplerini (INT8 / Float32) ve quantization parametrelerini (Scale, Zero Point) doğrular.
 3. ESP32-S3 mikrodenetleyicisi için önerilen Tensor Arena RAM boyutunu hesaplar.
 4. Çıkarım süresi ve ESP-NN SIMD optimizasyon hedeflerini raporlar.
 
