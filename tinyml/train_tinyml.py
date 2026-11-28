@@ -368,22 +368,22 @@ def run_pipeline(args):
         verbose=1
     )
 
-    # 5. Doğruluk Değerlendirmesi
+    # 5. Evaluation
     test_loss, test_acc = model.evaluate(X_test, y_test, verbose=0)
     print("\n==================================================================")
-    print(f"EĞİTİM TAMAMLANDI -> Test Doğruluğu: %{test_acc * 100:.2f} | Test Kaybı: {test_loss:.4f}")
+    print(f"EĞİTİM TAMAMLANDI -> Test Accuracy: %{test_acc * 100:.2f} | Test Loss: {test_loss:.4f}")
     print("==================================================================")
 
-    # 6. Sınıflandırma ve Karışıklık Matrisi
+    # 6. Classification Report & Confusion Matrix
     y_pred_probs = model.predict(X_test, verbose=0)
     y_pred = np.argmax(y_pred_probs, axis=1)
 
     try:
         from sklearn.metrics import classification_report, confusion_matrix
         target_names = [GESTURE_CLASSES[i] for i in range(5)]
-        print("\nSınıflandırma Raporu (Precision / Recall / F1-Score):")
+        print("\nClassification Report (Precision / Recall / F1-Score):")
         print(classification_report(y_test, y_pred, target_names=target_names))
-        print("Karışıklık Matrisi (Confusion Matrix):")
+        print("Confusion Matrix:")
         print(confusion_matrix(y_test, y_pred))
     except ImportError:
         pass

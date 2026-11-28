@@ -167,7 +167,7 @@ Farklı denek sayıları (8 dosya / 4 denek vs. 16 dosya / 8 denek) ve farklı y
 
 ### Modelin Eğitildiği Veri ile Test Verisi Ayrımı:
 * Model **kesinlikle eğitildiği veri üzerinde test edilmemiştir**. Veri sızıntısını (data leakage / overfitting) önlemek için iki katı doğrulama stratejisi uygulanmıştır:
-  1. **Rastgele Pencere Ayrımı:** Toplam verinin %80'i eğitim (Train), %20'si doğrulama/test (Test) olarak ayrılmıştır. Karışıklık matrisi sadece bu %20'lik test kümesinden elde edilmiştir.
+  1. **Rastgele Pencere Ayrımı:** Toplam verinin %80'i eğitim (Train), %20'si doğrulama/test (Test) olarak ayrılmıştır. Confusion matrix sadece bu %20'lik test kümesinden elde edilmiştir.
   2. **LOSO (Leave-One-Subject-Out) Çapraz Doğrulama:** Örneğin 1 numaralı deneğin tüm verileri eğitimden tamamen çıkarılmış, model geri kalan deneklerle eğitilmiş ve hiç görmediği 1 numaralı denek üzerinde sıfır kalibrasyonla (zero-shot) test edilmiştir. Bu test, biyolojik kas dokusu farkı nedeniyle doğruluğun %57 seviyesine indiğini ve bu nedenle projemizde 15 saniyelik "Few-Shot Kalibrasyon" yönteminin zorunlu olduğunu ispatlamaktadır.
 
 ---
@@ -193,21 +193,36 @@ Farklı denek sayıları (8 dosya / 4 denek vs. 16 dosya / 8 denek) ve farklı y
 
 ## 12. UCI Sınıfları, Nuada TinyML ve Önkol Kas Anatomisi Eşleşme Rehberi
 
-### 1. Terminalde Çalıştırılacak Komut (Ekran Görüntüsü İçin)
+### 1. Tüm UCI Sınıfları ve Nuada Eşleştirme Tablosu
+
+| UCI Orijinal Sınıfı | UCI'daki Anlamı | Nuada Boru Hattındaki İşlem | Bizim Eşleşen Sınıfımız (3-DOF Protez) | Biyomekanik / Fizyolojik Gerekçe |
+| :--- | :--- | :--- | :--- | :--- |
+| **Class 0** | **Unmarked Data (Etiketsiz Geçişler)** | **Filtrelendi / Çöpe Atıldı** | - | Deneklerin hareketler arasındaki kol gevşetme ve geçiş gürültüleridir. Dinlenme sanılıp eğitime sokulursa modeli bozar. |
+| **Class 1** | **Hand at Rest** | **Class 0'a Eşlendi** | **REST (Dinlenme)** | UCI'da dinlenme Class 1'dir. Sıfır kas aktivasyonu / nötr durum. |
+| **Class 2** | **Hand Clenched in a Fist** | **Class 1'e Eşlendi** | **FIST (Yumruk)** | Parmak fleksörleri (FDS) tam kasılır. Biyonik elde Power Grasp. |
+| **Class 3** | **Wrist Flexion** | **Class 2'ye Eşlendi** | **PINCH (Cımbız Kavrama)** | Bilek ve parmak fleksör kas sinerjisini (FPL + FDS) tetikler. İki parmak kıstırma. |
+| **Class 4** | **Wrist Extension** | **Class 3'e Eşlendi** | **OPEN (El Açma)** | Parmak ekstansörlerini (ED) kasar, eli ve parmakları geriye doğru sonuna kadar açar. |
+| **Class 5** | **Radial Deviations** | **Class 4'e Eşlendi** | **POINT (İşaret Etme)** | Bileğin başparmak yönüne sapması; işaret parmağı ve başparmak eksenini açığa çıkarır. |
+| **Class 6** | **Ulnar Deviations** | **Dışarıda Bırakıldı** | - | Serçe parmak tarafına bükme hareketi; 3 parmaklı mekanizmamızda (3-DOF) kullanılmaz. |
+| **Class 7** | **Extended Palm** | **Dışarıda Bırakıldı** | - | Class 4 ile mükerrer (redundant) el açma varyasyonudur. |
+
+### 2. Terminalde Çalıştırılacak Komut (Ekran Görüntüsü İçin)
 Aşağıdaki komutu `nuada-bionic-hand-tinyml/tinyml` dizininde çalıştırarak doğrudan terminal çıktısının ekran görüntüsünü alabilirsiniz:
 
 ```bash
 cd tinyml && ./venv/bin/python3 -c "
-headers = ['UCI Sınıfı (Lobov 2018)', 'Nuada TinyML Sınıfı', 'Hedef Önkol Kası (Anatomi)', 'Biyonik El Hareketi (3-DOF)']
+headers = ['UCI Sınıfı', 'UCI Anlamı', 'İşlem', 'Nuada Sınıfı', 'Biyomekanik / Fizyolojik Açıklama']
 rows = [
-    ['Class 0: Unmarked Data (Gürültü)', '[FİLTRELENDİ / DROP EDİLDİ]', '-', 'Geçiş anları temizlendi'],
-    ['Class 1: Hand at Rest', 'Class 0: REST', 'Tüm Kaslar Gevşek (Bazal)', 'Dinlenme / Nötr Durum'],
-    ['Class 2: Clenched Fist', 'Class 1: FIST', 'CH1: FDS (Flexor Digitorum Superf.)', 'Yumruk / Power Grasp'],
-    ['Class 3: Wrist Flexion', 'Class 2: PINCH / FLEX', 'CH2: FPL (Flexor Pollicis Longus)', 'Cımbız / Hassas Kavrama'],
-    ['Class 4: Wrist Extension', 'Class 3: OPEN / EXT', 'CH3: ED (Extensor Digitorum)', 'El Açma (Full Release)'],
-    ['Class 5: Radial Deviations', 'Class 4: POINT / DEV', 'CH4: FCU / EI (Extensor Indicis)', 'İşaret Etme / Parmak Açısı']
+    ['Class 0', 'Unmarked Data (Geçişler)', 'Filtrelendi / Çöpe Atıldı', '-', 'Geçiş gürültüsü; dinlenme sanılırsa modeli bozar'],
+    ['Class 1', 'Hand at Rest', 'Class 0\'a Eşlendi', 'REST (Dinlenme)', 'UCI\'da dinlenme Class 1\'dir. Sıfır kas aktivasyonu'],
+    ['Class 2', 'Clenched Fist', 'Class 1\'e Eşlendi', 'FIST (Yumruk)', 'Parmak fleksörleri (FDS) tam kasılır (Power Grasp)'],
+    ['Class 3', 'Wrist Flexion', 'Class 2\'ye Eşlendi', 'PINCH (Cımbız)', 'Fleksör kas sinerjisi (FPL + FDS) ile hassas tutuş'],
+    ['Class 4', 'Wrist Extension', 'Class 3\'e Eşlendi', 'OPEN (El Açma)', 'Parmak ekstansörleri (ED) ile tam el açma'],
+    ['Class 5', 'Radial Deviations', 'Class 4\'e Eşlendi', 'POINT (İşaret)', 'Bileğin radyal sapması; işaret parmağı aksı'],
+    ['Class 6', 'Ulnar Deviations', 'Dışarıda Bırakıldı', '-', 'Ulnar bükme; 3-DOF biyonik elimizde kullanılmaz'],
+    ['Class 7', 'Extended Palm', 'Dışarıda Bırakıldı', '-', 'Class 4 ile mükerrer (redundant) el açma varyasyonu']
 ]
-col_w = [34, 28, 36, 28]
+col_w = [11, 28, 28, 18, 52]
 def sep(c1, c2, c3):
     return c1 + c2.join(['─'*w for w in col_w]) + c3
 print(sep('┌', '┬', '┐'))
@@ -219,7 +234,7 @@ print(sep('└', '┴', '┘'))
 "
 ```
 
-### 2. Hedef Kas Anatomisi Atlası ve Kenhub Bağlantıları
+### 3. Hedef Kas Anatomisi Atlası ve Kenhub Bağlantıları
 Ekran görüntülerini alıp `docs/presentations/2nd_presentation/photos/` klasörüne kaydetmek için bağlantılar:
 
 1. **CH1 - [Flexor Digitorum Superficialis (FDS)](https://www.kenhub.com/en/library/anatomy/flexor-digitorum-superficialis-muscle):**

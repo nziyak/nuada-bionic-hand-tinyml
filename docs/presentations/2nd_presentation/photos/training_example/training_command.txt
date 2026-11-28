@@ -1,0 +1,1 @@
+./venv/bin/python3 train_tinyml.py --dataset_dir ../data/public_emg/ --model_type mlp --epochs 25 --quantize --output_header model_data.h
