@@ -280,10 +280,10 @@ def run_guided_protocol(ser, subject, root_data_dir, trials_per_angle=2):
     print(" • Açılar       : 0° (Yatay), 45° (Yarı Eğik), 90° (Dikey / Dik)")
     print(f" • Hareketler   : {', '.join([g.upper() for g in CORE_GESTURES])}")
     print(f" • Tekrar Sayısı: Her açı için {trials_per_angle} tur")
-    print(" • Kontrol      : Her harekette siz deneğe talimatı verip hazır olduğunda [ENTER]'a basarsınız.")
+    print(" • Kontrol      : Her harekette deneğe talimat verilip hazır olduğunda [ENTER]'a basılır.")
     print(" • Kayıt Süresi : [ENTER]'a basıldığı an 3 saniye sabit kasılma/tutuş kaydedilir.")
-    print(" • Dinlenme     : Denek gevşer, siz sıradaki hareketi anlatıp hazır olunca devam edersiniz.")
-    print(" • Overfit Önlem: Hareket sıraları her turda rastgele karıştırılır!")
+    print(" • Dinlenme     : Denek gevşer, sıradaki hareket anlatılıp hazır olunca devam edilir.")
+    print(" • Sıralama     : Hareket sıraları her turda rastgele karıştırılır.")
     print("="*75)
 
     total_recordings = len(TARGET_ANGLES) * trials_per_angle * len(CORE_GESTURES)
@@ -329,7 +329,7 @@ def run_guided_protocol(ser, subject, root_data_dir, trials_per_angle=2):
                     print("[TAMAM] Kayıt bitti. Deneğin elini gevşetmesini ve serbest bırakmasını söyleyin.")
 
     print("\n" + "="*75)
-    print(f"TEBRİKLER! Denek [{subject}] için 0°, 45° ve 90° tüm açılarda kayıtlar başarıyla tamamlandı!")
+    print(f"Denek [{subject}] için 0°, 45° ve 90° kayıtları tamamlandı.")
     print(f"Kayıtlar: {os.path.join(root_data_dir, subject)}")
     print("="*75)
 
@@ -345,17 +345,17 @@ def main():
     os.makedirs(data_dir, exist_ok=True)
 
     if is_mock:
-        print("\n[BİLGİ] Simülasyon (MOCK) modu aktif! Gerçekçi yapay EMG ve IMU sinyalleri üretiliyor...")
+        print("\n[BİLGİ] Mock modu: Sentetik EMG ve IMU sinyalleri üretiliyor.")
         ser = MockSerialDevice()
     else:
         if not port:
-            print("[HATA] ESP32 seri portu bulunamadı (/dev/ttyACM* veya /dev/ttyUSB* yok)!")
+            print("[HATA] ESP32 seri portu bulunamadı (/dev/ttyACM* veya /dev/ttyUSB* yok).")
             print("İpucu: Donanım bağlı değilken arayüzü ve akışı görmek için '--mock' parametresini kullanabilirsiniz:")
             print("       python3 scripts/record_live_emg.py --mock --guided\n")
             sys.exit(1)
 
         if serial is None:
-            print("[HATA] pyserial kütüphanesi bulunamadı! 'pip install pyserial' çalıştırınız.")
+            print("[HATA] pyserial kütüphanesi bulunamadı. 'pip install pyserial' çalıştırınız.")
             sys.exit(1)
 
         try:
@@ -392,7 +392,7 @@ def main():
             print("\n==========================================================================")
             print("  NUADA - 4x sEMG + MPU6050 EŞ ZAMANLI CANLI VERİ TOPLAMA VE KAYIT SİSTEMİ")
             print("==========================================================================")
-            print(f"Mod             : {'SİMÜLASYON (MOCK)' if is_mock else f'SERİ PORT ({port} @ {baudrate})'}")
+            print(f"Mod             : {'MOCK' if is_mock else f'SERİ PORT ({port} @ {baudrate})'}")
             print(f"Denek (Subject) : {subject}")
             print(f"Kol Açısı       : {angle}° ({ANGLE_DESCRIPTIONS.get(angle, '')})")
             print(f"Hedef Hareket   : >> {gesture.upper()} << (Deneme: {trial})")
