@@ -342,6 +342,14 @@ def run_pipeline(args):
     X_train, y_train = X[train_idx], y[train_idx]
     X_test, y_test = X[test_idx], y[test_idx]
 
+    # Veri Çoğaltma ve Gürültü Enjeksiyonu (Data Augmentation / Noise Robustness):
+    # Gerçek dünya elektrot temassızlığı ve termal gürültüye karşı modeli dayanıklı kılmak için
+    # sadece eğitim setine kontrollü Gauss beyaz gürültüsü eklenir (test seti saf bırakılır):
+    if args.add_noise:
+        noise = np.random.normal(0.0, args.noise_level, X_train.shape).astype(np.float32)
+        X_train = X_train + noise
+        print(f"[AUGMENT] Eğitim setine yapay Gauss gürültüsü eklendi (Gürbüzlük için standart sapma: {args.noise_level})")
+
     # 4. Eğitim
     print("\n--- Model Eğitimi Başlıyor ---")
     callbacks = [
@@ -439,6 +447,10 @@ if __name__ == "__main__":
                         help="Veri ayırma stratejisi: 'random' (pencere bazlı %80/%20) veya 'loso' (Leave-One-Subject-Out)")
     parser.add_argument("--test_subject", type=str, default="01",
                         help="LOSO stratejisinde test için tamamen dışarıda bırakılacak denek ID'si (ör. '01', '02')")
+    parser.add_argument("--add_noise", action="store_true", default=False,
+                        help="Eğitim setine kontrollü yapay Gauss gürültüsü ekle (Noise Robustness / Data Augmentation)")
+    parser.add_argument("--noise_level", type=float, default=0.05,
+                        help="Eklenecek gürültünün standart sapması (varsayılan: 0.05)")
 
     cli_args = parser.parse_args()
     run_pipeline(cli_args)
