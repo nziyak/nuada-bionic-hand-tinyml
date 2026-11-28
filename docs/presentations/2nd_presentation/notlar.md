@@ -63,39 +63,26 @@ Bu dosya, Salı 1 Aralık saat 22:00'ye kadar yüklenecek olan 6 dakikalık 2. A
 * **Gömülü Sistem Başarımı:** ESP32-S3 Core 1 üzerinde `vTaskTinyMLInference` hard real-time task; ESP-NN vektör hızlandırması ile < 15 ms latency, < 25 KB Tensor Arena RAM.
 * **Veri Toplama:** Continuous DMA ADC sürücüsü ve `record_live_emg.py` otomatik kayıt aracı.
 
-### 6.1 Canlı Veri Toplama Hattı Akışı (`record_live_emg.py` Horizontal Pipeline)
+### 6.1 Canlı Veri Toplama Hattı Akışı (`record_live_emg.py` Adım Adım Rehberli Protokol)
 
 ```mermaid
 flowchart LR
-    subgraph S1 ["1. Konfigürasyon"]
-        CFG["Parametreler<br>(Denek ID, Hareket,<br>Açı: 0° / 45° / 90°)"]
-    end
+    STEP1["<b>1. Script Başlatma</b><br><code>python3 record_live_emg.py --guided -s s01</code><br>Ekrana protokol ve toplam kayıt hedefi basılır<br>Operatör hazır olunca <b>[ENTER]</b> tuşuna basar"]
+    --> STEP2["<b>2. Kol Açısı Talimatı</b><br>Script: <i>'Kolu 0° / 45° / 90° konumuna getirin'</i><br>Deneğe kol açısı aldırılır ve sabitlenir<br>Operatör <b>[ENTER]</b> ile onaylar"]
+    --> STEP3["<b>3. Hareket Talimatı</b><br>Script: <i>'SIRADAKİ: >>> FIST (Yumruk) <<<'</i><br>Deneğe kasılma talimatı verilir ve sabitlenir<br>Operatör <b>[ENTER]</b> tuşuna basar"]
+    --> STEP4["<b>4. 3 Saniye Kesintisiz Kayıt</b><br>ESP32'den 100 Hz senkron akış başlar<br>4-Ch sEMG + 6-Axis IMU (300 örnek)<br>Terminalde canlı doyum/sinyal barları akar"]
+    --> STEP5["<b>5. Otomatik CSV ve Klasörleme</b><br>Kayıt doğrudan ilgili klasöre yazılır:<br><code>data/s01/fist/fist_deg45_trial1_timestamp.csv</code><br>Dizinler yoksa otomatik oluşturulur"]
+    --> STEP6["<b>6. Dinlenme & Sıradaki Hareket</b><br>Script: <i>'[TAMAM] Eli gevşetin ve dinlendirin'</i><br>Kas yorgunluğunu önleme molası verilir<br>Sonraki hareket rastgele sırayla çağrılır"]
 
-    subgraph S2 ["2. Donanım & Seri Bağlantı"]
-        UART["ESP32-S3 UART/DMA<br>(115200 Baud / USB CDC)"]
-    end
-
-    subgraph S3 ["3. Operatör Tetikleyici"]
-        TRIG["Enter-to-Record<br>(Sıfır stres protokolü)"]
-    end
-
-    subgraph S4 ["4. Senkron Örnekleme"]
-        STREAM["3 sn 100 Hz Akış<br>(4-Kanal sEMG +<br>6-Eksen IMU)"]
-        BAR["Terminal Görsel Bar<br>(Canlı Satürasyon Takibi)"]
-    end
-
-    subgraph S5 ["5. Dinlenme & Kayıt"]
-        REST["3 sn Kas Dinlenmesi<br>(Yorgunluk Önleme)"]
-        CSV["Etiketli CSV Çıktısı<br>(s01_fist_angle45_trial1.csv)"]
-    end
-
-    CFG --> UART
-    UART --> TRIG
-    TRIG --> STREAM
-    STREAM --> BAR
-    BAR --> REST
-    REST --> CSV
+    STEP6 -.->|"Sıradaki Hareket (Rastgele Seçim)"| STEP3
+    STEP6 -.->|"Açı Turları Tamamlanınca (0° -> 45° -> 90°)"| STEP2
 ```
+
+#### Protokolün Önemli Ayrıntıları:
+1. **Sıfır Stres (Operatör Kontrollü ENTER Tetikleme):** Denek henüz hazır olmadan veya kası titrerken kayıt başlamaz. Operatör deneğin hareketi doğru ve kararlı yaptığını gözlemlediği anda `[ENTER]` tuşuna basarak 3 saniyelik alımı başlatır.
+2. **Otomatik Hiyerarşik Klasörleme:** Hiçbir dosya adı veya dizin elle açılmaz. Script doğrudan `data/<denek_id>/<hareket>/` yapısında CSV'yi kaydeder.
+3. **Kas Yorgunluğu (Fatigue) Koruması:** Her 3 saniyelik kasılmadan sonra deneğe elini gevşetmesi söylenir; böylece motor ünitelerin yorulmasından kaynaklanan biyolojik sinyal kaymaları engellenir.
+4. **Rastgele Sıralama (Overfitting Önleme):** Denek ezbere hareket yapmasın ve model sıralı geçişlere alışmasın diye her turda hareketler rastgele karıştırılır.
 
 ### Evrim Doğa Solmaz (Donanım, Gömülü DSP, Kinematik & Simülasyon):
 * **Donanım & Dağıtım Kartı:** Pertinaks üzerine 4-kanallı TL084 sEMG sensör dağıtımı, dirençli gerilim bölücüler ve MPU-6050 montajı.
