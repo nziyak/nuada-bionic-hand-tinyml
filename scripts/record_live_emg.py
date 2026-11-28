@@ -124,20 +124,27 @@ def find_serial_port():
     return sorted(ports)[0]
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Nuada Bionic Hand - 4x EMG + MPU6050 Multi-Angle Synchronized Recorder")
-    parser.add_argument("port", nargs="?", default=None, help="Seri port (/dev/ttyACM0). Belirtilmezse otomatik bulunur.")
-    parser.add_argument("-b", "--baud", type=int, default=115200, help="Baud rate (varsayılan: 115200)")
-    parser.add_argument("-s", "--subject", type=str, default=None, help="Denek kodu/adı (örn: s01, ahmet, test)")
-    parser.add_argument("-g", "--gesture", type=str, default="unlabeled", 
-                        help="Hareket etiketi (örn: rest, fist, open_hand, pinch, point, wrist_flex)")
-    parser.add_argument("-a", "--angle", type=int, default=0, choices=[0, 45, 90],
+    parser = argparse.ArgumentParser(
+        description="Nuada Bionic Hand - 4x EMG + MPU6050 Multi-Angle Synchronized Recorder",
+        formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=36)
+    )
+    parser.add_argument("port", nargs="?", default=None,
+                        help="Seri port (/dev/ttyACM0). Belirtilmezse otomatik bulunur.")
+    parser.add_argument("-b", "--baud", type=int, default=115200, metavar="BAUD",
+                        help="Baud rate (varsayılan: 115200)")
+    parser.add_argument("-s", "--subject", type=str, default=None, metavar="ID",
+                        help="Denek kodu/adı (örn: s01, ahmet, test)")
+    parser.add_argument("-g", "--gesture", type=str, default="unlabeled", metavar="NAME",
+                        help="Hareket etiketi (örn: rest, fist, open_hand, pinch, point)")
+    parser.add_argument("-a", "--angle", type=int, default=0, choices=[0, 45, 90], metavar="DEG",
                         help="Kol açısı (0, 45 veya 90 derece; varsayılan: 0)")
-    parser.add_argument("-p", "--posture", type=str, default="neutral",
+    parser.add_argument("-p", "--posture", type=str, default="neutral", metavar="POS",
                         help="Kol duruşu (örn: neutral, pronated; varsayılan: neutral)")
-    parser.add_argument("-t", "--trial", type=int, default=1, help="Tekrar/Deneme numarası (varsayılan: 1)")
-    parser.add_argument("-d", "--duration", type=float, default=0.0,
-                        help="Kayıt süresi (saniye). 0 ise Ctrl+C yapılana kadar kesintisiz kaydeder.")
-    parser.add_argument("--trials-per-angle", type=int, default=2,
+    parser.add_argument("-t", "--trial", type=int, default=1, metavar="N",
+                        help="Tekrar/Deneme numarası (varsayılan: 1)")
+    parser.add_argument("-d", "--duration", type=float, default=0.0, metavar="SEC",
+                        help="Kayıt süresi (sn). 0 ise Ctrl+C'ye kadar kesintisiz kaydeder.")
+    parser.add_argument("--trials-per-angle", type=int, default=2, metavar="N",
                         help="Rehberli modda açı başına tekrar sayısı (varsayılan: 2)")
     parser.add_argument("--guided", action="store_true",
                         help="0°, 45° ve 90° açılarında operatör kontrollü rehberli oturumu başlatır.")
