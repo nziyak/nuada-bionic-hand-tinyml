@@ -348,7 +348,7 @@ def run_pipeline(args):
     if args.add_noise:
         noise = np.random.normal(0.0, args.noise_level, X_train.shape).astype(np.float32)
         X_train = X_train + noise
-        print(f"[AUGMENT] Eğitim setine yapay Gauss gürültüsü eklendi (Gürbüzlük için standart sapma: {args.noise_level})")
+        print(f"[AUGMENT] Egitim setine yapay Gauss gurultusu eklendi (Noise robustness / data augmentation, std: {args.noise_level})")
 
     # 4. Eğitim
     print("\n--- Model Eğitimi Başlıyor ---")
@@ -444,7 +444,7 @@ if __name__ == "__main__":
     parser.add_argument("--samples_per_class", type=int, default=150,
                         help="Mock modunda sınıf başına üretilecek pencere sayısı")
     parser.add_argument("--split_strategy", type=str, choices=["random", "loso"], default="random",
-                        help="Veri ayırma stratejisi: 'random' (pencere bazlı %80/%20) veya 'loso' (Leave-One-Subject-Out)")
+                        help="Veri ayırma stratejisi: 'random' (pencere bazlı %%80/%%20) veya 'loso' (Leave-One-Subject-Out)")
     parser.add_argument("--test_subject", type=str, default="01",
                         help="LOSO stratejisinde test için tamamen dışarıda bırakılacak denek ID'si (ör. '01', '02')")
     parser.add_argument("--add_noise", action="store_true", default=False,
