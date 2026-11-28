@@ -42,32 +42,30 @@ graph TD
     end
 
     subgraph AFE_STAGE ["2. Analog Front-End (AFE)"]
-        AMP["4x Ready-Made sEMG Sensor Modules (±5V Dual Supply)"]
-        FILTER["Bandpass Filter (20 Hz - 450 Hz) + Notch Filter (50 Hz)"]
+        AMP["4x TL084 sEMG Sensor Modules (±9V Dual Battery Supply)"]
+        DIVIDER["Resistive Voltage Dividers (4.7k / 10k -> 0-2.4V Max)"]
     end
 
-    subgraph MCU_STAGE ["3. Embedded System (ESP32-S3)"]
-        ADC_ENGINE["ADC Engine (Plan A: Internal DMA ADC / Plan B: External MCP3008 SPI)"]
-        RAW_PIPE["Student 1 Pipeline: Raw Waveform (2000 Hz) -> 1D-CNN"]
-        DSP_PIPE["Student 2 Pipeline: Envelope / RMS (100 Hz) -> Hudgins Features + ML"]
-        IMU_FUSION["Kinematic Fusion Algorithm (Arm Elevation / Pitch & Roll)"]
+    subgraph MCU_STAGE ["3. Embedded System (ESP32-S3 Dual-Core FreeRTOS)"]
+        ADC_ENGINE["Continuous DMA ADC (100 Hz - 2000 Hz)"]
+        ZIYA_PIPE["Core 1 Hard RTOS (Ziya): 19-Feature Vector -> 1D-CNN & Deep MLP (INT8)"]
+        EVRIM_PIPE["Core 0 Soft RTOS (Evrim): IIR DSP Filters & Madgwick IMU Fusion -> UDP Telemetry"]
     end
 
     subgraph OUTPUT_STAGE ["4. Digital Twin Simulation"]
-        SIM["3D Bionic Hand & Arm Simulation (Unity / WebGL / Blender)"]
+        SIM["3D Bionic Hand Digital-Twin (Three.js / WebGL Simulation)"]
     end
 
     MUSCLE --> DRY
     DRY --> AMP
     REF -.-> AMP
-    AMP --> FILTER
-    FILTER --> ADC_ENGINE
-    IMU_CHIP -->|I2C Fast Mode 400 kHz| IMU_FUSION
-    ADC_ENGINE --> RAW_PIPE
-    ADC_ENGINE --> DSP_PIPE
-    RAW_PIPE --> SIM
-    DSP_PIPE --> SIM
-    IMU_FUSION --> SIM
+    AMP --> DIVIDER
+    DIVIDER --> ADC_ENGINE
+    IMU_CHIP -->|I2C Fast Mode 400 kHz| EVRIM_PIPE
+    ADC_ENGINE --> ZIYA_PIPE
+    ADC_ENGINE --> EVRIM_PIPE
+    ZIYA_PIPE -->|Cross-Core Queue| EVRIM_PIPE
+    EVRIM_PIPE -->|Wi-Fi UDP Telemetry| SIM
 ```
 
 ---
@@ -135,11 +133,11 @@ nuada-bionic-hand-tinyml/
 │   │   ├── satin_alma_listesi.md                # Procurement and budget breakdown
 │   │   ├── ad8232_emg_modifikasyon_rehberi.md   # (Cancelled) AD8232 Sallen-Key LPF mod guide, reference only
 │   │   ├── emg_dagitim_karti_pertinaks_plani.md # Perfboard 4-Ch EMG & power distribution hub plan
+│   │   ├── emg_hub_lehim_rehberi.pdf            # 6-page step-by-step perfboard soldering & wiring manual
 │   │   └── datasheets/                          # Manufacturer datasheets & bus timing calculations
 │   ├── images/                             # Schematics, board layouts & physical hardware photos
-│   ├── presentations/                      # Official project proposal & final presentations
-│   ├── articles/                           # Foundational peer-reviewed academic papers (Hudgins 1993, Fougner 2011)
-│   └── archive/                            # Historical transcripts & initial scratch lab notes
+│   ├── presentations/                      # Official project proposal & interim presentations
+│   └── articles/                           # Foundational peer-reviewed academic papers (Hudgins 1993, Fougner 2011)
 ├── tubitak/                                # TÜBİTAK 2209-A grant proposal texts & application documentation
 ├── firmware/                               # ESP32-S3 C++ firmware (PlatformIO)
 ├── tinyml/                                 # Deep TinyML, 1D-CNN/MLP, INT8 quantization & Core 1 deployment (Ziya)
