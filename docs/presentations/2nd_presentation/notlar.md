@@ -63,6 +63,40 @@ Bu dosya, Salı 1 Aralık saat 22:00'ye kadar yüklenecek olan 6 dakikalık 2. A
 * **Gömülü Sistem Başarımı:** ESP32-S3 Core 1 üzerinde `vTaskTinyMLInference` hard real-time task; ESP-NN vektör hızlandırması ile < 15 ms latency, < 25 KB Tensor Arena RAM.
 * **Veri Toplama:** Continuous DMA ADC sürücüsü ve `record_live_emg.py` otomatik kayıt aracı.
 
+### 6.1 Canlı Veri Toplama Hattı Akışı (`record_live_emg.py` Horizontal Pipeline)
+
+```mermaid
+flowchart LR
+    subgraph S1 ["1. Konfigürasyon"]
+        CFG["Parametreler<br>(Denek ID, Hareket,<br>Açı: 0° / 45° / 90°)"]
+    end
+
+    subgraph S2 ["2. Donanım & Seri Bağlantı"]
+        UART["ESP32-S3 UART/DMA<br>(115200 Baud / USB CDC)"]
+    end
+
+    subgraph S3 ["3. Operatör Tetikleyici"]
+        TRIG["Enter-to-Record<br>(Sıfır stres protokolü)"]
+    end
+
+    subgraph S4 ["4. Senkron Örnekleme"]
+        STREAM["3 sn 100 Hz Akış<br>(4-Kanal sEMG +<br>6-Eksen IMU)"]
+        BAR["Terminal Görsel Bar<br>(Canlı Satürasyon Takibi)"]
+    end
+
+    subgraph S5 ["5. Dinlenme & Kayıt"]
+        REST["3 sn Kas Dinlenmesi<br>(Yorgunluk Önleme)"]
+        CSV["Etiketli CSV Çıktısı<br>(s01_fist_angle45_trial1.csv)"]
+    end
+
+    CFG --> UART
+    UART --> TRIG
+    TRIG --> STREAM
+    STREAM --> BAR
+    BAR --> REST
+    REST --> CSV
+```
+
 ### Evrim Doğa Solmaz (Donanım, Gömülü DSP, Kinematik & Simülasyon):
 * **Donanım & Dağıtım Kartı:** Pertinaks üzerine 4-kanallı TL084 sEMG sensör dağıtımı, dirençli gerilim bölücüler ve MPU-6050 montajı.
 * **Gömülü C++ DSP:** 20 - 450 Hz IIR bant geçiren filtre ve 50 Hz notch filtre basamakları.
@@ -118,6 +152,18 @@ Açık UCI sEMG veri seti ve ESP32-S3 mimarisi üzerinde elde edilen doğrulanm�
 | **Noise Robustness Testi** | **%76.86** (FIST: %72, PINCH: %91) | **%71.50** (PINCH: %85) | %5 yapay Gauss gürültüsü altında bile başarım korunmaktadır |
 | **Nihai Karar & Tercih** | **Birincil Model (Varsayılan)** | **İkincil / Yedek Model** | MLP hem %82 doğruluğa ulaştığı hem de daha az RAM ve CPU tükettiği için birincil seçildi |
 
+### 9.1 Kapsamlı Denek ve Gürültü Dayanımı (Noise Robustness) Matrisi
+
+Farklı denek sayıları (8 dosya / 4 denek vs. 16 dosya / 8 denek) ve farklı yapay Gauss gürültüsü oranlarında (%0, %2, %5, %10) elde edilen deneysel doğruluk değerleri:
+
+| Denek / Dosya Havuzu | Yapay Gürültü Seviyesi | Deep MLP Test Accuracy (%) | 1D-CNN Test Accuracy (%) | Biyomekanik & TinyML Yorumu |
+| :--- | :--- | :--- | :--- | :--- |
+| **8 Dosya (4 Denek, 3.409 Pencere)** | %0 (Temiz Sinyal) | **%76.83** | **%74.49** | Homojen küçük grupta her iki model de kararlı yakınsar. |
+| **16 Dosya (8 Denek, 6.850 Pencere)** | %0 (Temiz Sinyal) | **%77.88** | **%71.68** | Denek sayısı arttıkça MLP 19-feature uzayında genelleme gücünü korur. |
+| **16 Dosya (8 Denek, 6.850 Pencere)** | %2 Gauss Gürültüsü | **%76.72** | **%71.61** | Düşük sensör termal gürültüsünde modellerde kayıp ihmal edilebilir düzeydedir. |
+| **16 Dosya (8 Denek, 6.850 Pencere)** | %5 Gauss Gürültüsü | **%77.37** | **%72.55** | CNN evrişim filtreleri gürültü augmentasyonu ile kendini regüle eder. |
+| **16 Dosya (8 Denek, 6.850 Pencere)** | %10 Gauss Gürültüsü | **%76.28** | **%73.07** | Yüksek gürültüde bile MLP %76+ seviyesini koruyarak üstün feature kararlılığı gösterir. |
+
 ---
 
 ## 10. Sınıflandırma Metrikleri ve Değerlendirme Çerçevesi
@@ -155,3 +201,61 @@ Açık UCI sEMG veri seti ve ESP32-S3 mimarisi üzerinde elde edilen doğrulanm�
 
 ### S5: Modele Yapay Gürültü Enjeksiyonu (Data Augmentation) Uygulandı mı?
 * **Açıklama:** Evet. Gerçek dünyadaki elektrot temassızlığı, kas titremesi ve çevresel gürültülere karşı modelin gürbüzlüğünü (noise robustness) artırmak amacıyla eğitim kümesine kontrollü Gauss beyaz gürültüsü eklenmiştir (standart sapma = 0.05). Model gürültü altında dahi **%76.86 genel doğruluğunu** korumuş, aşırı öğrenmeyi (overfitting) engelleyerek FIST yakalama duyarlılığını %67'den %72'ye çıkarmıştır.
+
+---
+
+## 12. UCI Sınıfları, Nuada TinyML ve Önkol Kas Anatomisi Eşleşme Rehberi
+
+### 1. Terminalde Çalıştırılacak Komut (Ekran Görüntüsü İçin)
+Aşağıdaki komutu `nuada-bionic-hand-tinyml/tinyml` dizininde çalıştırarak doğrudan terminal çıktısının ekran görüntüsünü alabilirsiniz:
+
+```bash
+cd tinyml && ./venv/bin/python3 -c "
+headers = ['UCI Sınıfı (Lobov 2018)', 'Nuada TinyML Sınıfı', 'Hedef Önkol Kası (Anatomi)', 'Biyonik El Hareketi (3-DOF)']
+rows = [
+    ['Class 0: Unmarked Data (Gürültü)', '[FİLTRELENDİ / DROP EDİLDİ]', '-', 'Geçiş anları temizlendi'],
+    ['Class 1: Hand at Rest', 'Class 0: REST', 'Tüm Kaslar Gevşek (Bazal)', 'Dinlenme / Nötr Durum'],
+    ['Class 2: Clenched Fist', 'Class 1: FIST', 'CH1: FDS (Flexor Digitorum Superf.)', 'Yumruk / Power Grasp'],
+    ['Class 3: Wrist Flexion', 'Class 2: PINCH / FLEX', 'CH2: FPL (Flexor Pollicis Longus)', 'Cımbız / Hassas Kavrama'],
+    ['Class 4: Wrist Extension', 'Class 3: OPEN / EXT', 'CH3: ED (Extensor Digitorum)', 'El Açma (Full Release)'],
+    ['Class 5: Radial Deviations', 'Class 4: POINT / DEV', 'CH4: FCU / EI (Extensor Indicis)', 'İşaret Etme / Parmak Açısı']
+]
+col_w = [34, 28, 36, 28]
+def sep(c1, c2, c3):
+    return c1 + c2.join(['─'*w for w in col_w]) + c3
+print(sep('┌', '┬', '┐'))
+print('│' + '│'.join(f' {h:<{col_w[i]-1}}' for i, h in enumerate(headers)) + '│')
+print(sep('├', '┼', '┤'))
+for r in rows:
+    print('│' + '│'.join(f' {c:<{col_w[i]-1}}' for i, c in enumerate(r)) + '│')
+print(sep('└', '┴', '┘'))
+"
+```
+
+### 2. Hedef Kas Anatomisi Atlası ve Kenhub Bağlantıları
+Ekran görüntülerini alıp `docs/presentations/2nd_presentation/photos/` klasörüne kaydetmek için bağlantılar:
+
+1. **CH1 - [Flexor Digitorum Superficialis (FDS)](https://www.kenhub.com/en/library/anatomy/flexor-digitorum-superficialis-muscle):**
+   * *Konum:* Önkol iç orta bölgesi (Volare/Anterior).
+   * *İşlev:* 2-5. parmakların orta falankslarını büker.
+   * *Eşleştiği Hareket:* **FIST (Yumruk / Power Grasp)**.
+2. **CH2 - [Flexor Pollicis Longus (FPL)](https://www.kenhub.com/en/library/anatomy/flexor-pollicis-longus-muscle):**
+   * *Konum:* Önkol iç radial yanı (Radius kemiği boyunca).
+   * *İşlev:* Başparmağın distal falanksını büker.
+   * *Eşleştiği Hareket:* **PINCH / FLEX (Cımbız / Hassas Tutuş)**.
+3. **CH3 - [Extensor Digitorum (ED)](https://www.kenhub.com/en/library/anatomy/extensor-digitorum-muscle):**
+   * *Konum:* Önkol arka/dış orta bölgesi (Posterior).
+   * *İşlev:* 2-5. parmakları geriye doğru sonuna kadar açar.
+   * *Eşleştiği Hareket:* **OPEN / EXT (El Açma / Nesneyi Bırakma)**.
+4. **CH4 - [Extensor Indicis (EI)](https://www.kenhub.com/en/library/anatomy/extensor-indicis-muscle) & [Flexor Carpi Ulnaris (FCU)](https://www.kenhub.com/en/library/anatomy/flexor-carpi-ulnaris-muscle):**
+   * *Konum:* Önkol ulnar kenarı ve derin arka bölgesi.
+   * *İşlev:* İşaret parmağını bağımsız uzatma ve bileği stabilize etme.
+   * *Eşleştiği Hareket:* **POINT / DEV (İşaret Etme)**.
+5. **Genel Önkol Kasları Çizimi (Wikimedia Commons):**
+   * [OpenStax Forearm Muscles Image](https://commons.wikimedia.org/wiki/File:1120_Muscles_that_Move_the_Forearm.jpg)
+
+### 3. Slayt Yerleşim Tasarımı (3 Sütunlu Düzen)
+Slaytta soldan sağa akıcı bir mantıksal köprü kurulması önerilir:
+* **Sol Sütun (Ham UCI Sınıfları):** UCI Lobov et al. (2018) veri setindeki Class 0, 1, 2, 3, 4, 5 listesi.
+* **Orta Sütun (Nuada TinyML Eşleşmesi):** Ortaya çıkarılan yönlendirme okları ile 5 temel sınıfımız (Rest, Fist, Pinch, Open, Point).
+* **Sağ Sütun (Kas Biyomekaniği ve Fotoğraflar):** Her hareketin tetiklediği FDS, FPL, ED, EI kaslarının Kenhub'dan alınan izole fotoğrafları (`photos/` klasöründen) ve 3-DOF biyonik parmak motorlarının mekanik hareketi.
